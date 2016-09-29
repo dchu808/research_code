@@ -8,7 +8,7 @@ import asciidata
 ##DOES NOT USE ORBIT ENVELOPES RIGHT NOW
 
 def get_astr_data(star,dir):
-	model_table = asciidata.open(dir + 'orbit.'+star+'.model')
+    # model_table = asciidata.open(dir + 'orbit.'+star+'.model')
 	points_table = asciidata.open(dir + star+'.points')
 	#read in astrometric data
 	datedat = points_table[0].tonumpy()
@@ -16,6 +16,25 @@ def get_astr_data(star,dir):
 	ydat = points_table[2].tonumpy()
 	xerrdat = points_table[3].tonumpy()
 	yerrdat = points_table[4].tonumpy()
+	#read in orbital models:
+    # date = model_table[0].tonumpy()
+    # x = model_table[1].tonumpy()
+    # y = model_table[2].tonumpy()
+    # z = model_table[3].tonumpy()
+    # vx = model_table[4].tonumpy()
+    # vy = model_table[5].tonumpy()
+	minx = np.min(xdat)
+	maxx = np.max(xdat)
+	miny = np.min(ydat)
+	maxy = np.max(ydat)
+	
+    # return datedat, xdat, ydat, xerrdat, yerrdat, date, x, y, z, vx, vy, minx, maxx, miny, maxy
+    return datedat, xdat, ydat, xerrdat, yerrdat, minx, maxx, miny, maxy
+    
+##want separate function to pull out astrometric model
+
+def get_astr_model(star,dir):
+	model_table = asciidata.open(dir + 'orbit.'+star+'.model')
 	#read in orbital models:
 	date = model_table[0].tonumpy()
 	x = model_table[1].tonumpy()
@@ -27,33 +46,56 @@ def get_astr_data(star,dir):
 	maxx = np.max(xdat)
 	miny = np.min(ydat)
 	maxy = np.max(ydat)
-	
-	return datedat, xdat, ydat, xerrdat, yerrdat, date, x, y, z, vx, vy, minx, maxx, miny, maxy
-	
+    
+    return date, x, y, z, vx, vy
+    
 def get_rv_data(star,dir):
-	model_table = asciidata.open(dir + 'orbit.'+star+'.model')
+    # model_table = asciidata.open(dir + 'orbit.'+star+'.model')
 	rv_table = asciidata.open(dir + star + '.rv')
-	## RV from model
-	vz = -model_table[6].tonumpy()
+    # ## RV from model
+    # vz = -model_table[6].tonumpy()
 	#read in RV data
 	daterv = rv_table[0].tonumpy()
 	rv = rv_table[1].tonumpy()
 	rverr = rv_table[2].tonumpy()
 	
-	return vz, daterv, rv, rverr
-	
+    # return vz, daterv, rv, rverr
+    return daterv, rv, rverr
+
+##want separate function to pull out astrometric model	
+def get_rv_model()
+    model_table = asciidata.open(dir + 'orbit.'+star+'.model')
+	## RV from model
+	vz = -model_table[6].tonumpy()
+    return vz
+    
 ##make plots
 ##potentially call multiple points files from multiple align directories
+##only one model is plotted. Make sure that is the first directory
 def make_plots(stars,dirs,include_rv=True):
-	plt.figure(figsize = (16,10))
+    ##will only take model from the first directory and star
+	date, x, y, z, vx, vy = get_astr_model(stars[0],dirs[0])
+    if include_rv==True:
+        vz = get_rv_model(stars[0],dirs[0])
+    
+    plt.figure(figsize = (16,10))
     ##some parts of this is hardcoded - choose the order of colors, for instance
     colors = ['black','green','blue']
+    
+    ##plot the different points files that want to be included
 	for i in range(len(stars)):
 		star = stars[i]
 		dir = dirs[i]
-		datedat, xdat, ydat, xerrdat, yerrdat, date, x, y, z, vx, vy, minx, maxx, miny, maxy = get_astr_data(star,dir)
+        ##will pull out data information from list of stars/directories
+        # datedat, xdat, ydat, xerrdat, yerrdat, date, x, y, z, vx, vy, minx, maxx, miny, maxy = get_astr_data(star,dir)
+        datedat, xdat, ydat, xerrdat, yerrdat, minx, maxx, miny, maxy = get_astr_data(star,dir)
+        
 		if include_rv==True:
-			vz, daterv, rv, rverr = get_rv_data(star,dir)
+            # vz, daterv, rv, rverr = get_rv_data(star,dir)
+            daterv, rv, rverr = get_rv_data(star,dir)
+        
+        
+        
 	
 	    # plt.figure(figsize = (16,10))
 	    ##joint figure
