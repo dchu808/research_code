@@ -8,7 +8,6 @@ import asciidata
 ##DOES NOT USE ORBIT ENVELOPES RIGHT NOW
 
 def get_astr_data(star,dir):
-	# model_table = asciidata.open(dir + 'orbit.'+star+'.model')
 	points_table = asciidata.open(dir + star+'.points')
 	#read in astrometric data
 	datedat = points_table[0].tonumpy()
@@ -16,19 +15,11 @@ def get_astr_data(star,dir):
 	ydat = points_table[2].tonumpy()
 	xerrdat = points_table[3].tonumpy()
 	yerrdat = points_table[4].tonumpy()
-	#read in orbital models:
-	# date = model_table[0].tonumpy()
-	# x = model_table[1].tonumpy()
-	# y = model_table[2].tonumpy()
-	# z = model_table[3].tonumpy()
-	# vx = model_table[4].tonumpy()
-	# vy = model_table[5].tonumpy()
 	minx = np.min(xdat)
 	maxx = np.max(xdat)
 	miny = np.min(ydat)
 	maxy = np.max(ydat)
 	
-	# return datedat, xdat, ydat, xerrdat, yerrdat, date, x, y, z, vx, vy, minx, maxx, miny, maxy
 	return datedat, xdat, ydat, xerrdat, yerrdat, minx, maxx, miny, maxy
 	
 ##want separate function to pull out astrometric model
@@ -46,10 +37,7 @@ def get_astr_model(star,dir):
 	return date, x, y, z, vx, vy
 	
 def get_rv_data(star,dir):
-	# model_table = asciidata.open(dir + 'orbit.'+star+'.model')
 	rv_table = asciidata.open(dir + star + '.rv')
-	# ## RV from model
-	# vz = -model_table[6].tonumpy()
 	#read in RV data
 	daterv = rv_table[0].tonumpy()
 	rv = rv_table[1].tonumpy()
@@ -74,7 +62,10 @@ def make_plots(stars,dirs,include_rv=True):
 	if include_rv==True:
 		vz = get_rv_model(stars[0],dirs[0])
 	
-	plt.figure(figsize = (16,10))
+	if include_rv==True:
+		plt.figure(figsize = (16,10))
+	else:
+		plt.figure(figsize = (12,10))
 	##some parts of this is hardcoded - choose the order of colors, for instance
 	colors = ['black','red','blue']
 	
@@ -96,7 +87,11 @@ def make_plots(stars,dirs,include_rv=True):
 		# plt.figure(figsize = (16,10))
 		##joint figure
 		##x vs time
-		plt.subplot(331)
+		if include_rv==True:
+			plt.subplot(331)
+		else:
+			plt.subplot(321)
+		
 		#plt.figure(figsize = (5,5))
 		#plt.clf()
 		plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
@@ -109,17 +104,27 @@ def make_plots(stars,dirs,include_rv=True):
 		plt.xlim([1995, 2020])
 	
 		##y vs time
-		plt.subplot(332)
+		if include_rv==True:
+			plt.subplot(332)
+		else:
+			plt.subplot(322)
+		# plt.subplot(332)
 		plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
 		plt.title(stars[0])
 		plt.plot(date, y, color = colors[0])
 		plt.scatter(datedat, ydat, color = colors[s])
 		plt.errorbar(datedat, ydat, yerrdat, np.zeros(len(datedat)), color = colors[s], linestyle = 'None')
+		plt.xlabel('Date (years)')
+		plt.ylabel('Dec Offset (arcsec)')
 	
 		##plot x vs t residual
 		#plt.figure(figsize = (5,5))
 		#plt.clf()
-		plt.subplot(334)
+		if include_rv==True:
+			plt.subplot(333)
+		else:
+			plt.subplot(323)
+		# plt.subplot(334)
 		plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
 		plt.axhline(color=colors[0])
 		idx_2 = np.zeros(len(xdat), dtype = int)
@@ -128,13 +133,18 @@ def make_plots(stars,dirs,include_rv=True):
 			idx_2[i] = minimum_2
 		plt.scatter(datedat, -xdat + x[idx_2], color = colors[s])
 		plt.errorbar(datedat, -xdat + x[idx_2], xerrdat, np.zeros(len(datedat)), color = colors[s], linestyle = 'None')
+		plt.xlabel('Date (years)')
 		plt.ylabel('RA Residual (arcsec)')
 		plt.xlim([1995, 2020])
 	
 		##plot y vs t residual
 		#plt.figure(figsize = (5,5))
 		#plt.clf()
-		plt.subplot(335)
+		if include_rv==True:
+			plt.subplot(334)
+		else:
+			plt.subplot(324)
+		# plt.subplot(335)
 		plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
 		plt.axhline(color=colors[0])
 		idx_2 = np.zeros(len(ydat), dtype = int)
@@ -148,8 +158,13 @@ def make_plots(stars,dirs,include_rv=True):
 		plt.xlim([1995, 2020])
 	
 		##plot the orbit in x and y
-		plt.subplot(338)
+		if include_rv==True:
+			plt.subplot(338)
+		else:
+			plt.subplot(325)
+		# plt.subplot(338)
 		plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
+		plt.axis('equal')
 		plt.plot(-x, y, color = colors[0])
 		plt.scatter(-xdat, ydat, color = colors[s])
 		plt.errorbar(-xdat, ydat, yerrdat, xerrdat, color = colors[s], linestyle = 'None')
