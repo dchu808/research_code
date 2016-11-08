@@ -89,8 +89,10 @@ def make_plots(stars,dirs,include_rv=True):
 		##x vs time
 		if include_rv==True:
 			plt.subplot(331)
+			plt.suptitle(stars[0],fontsize=16)
 		else:
 			plt.subplot(321)
+			plt.suptitle(stars[0],fontsize=16)
 		
 		#plt.figure(figsize = (5,5))
 		#plt.clf()
@@ -110,7 +112,6 @@ def make_plots(stars,dirs,include_rv=True):
 			plt.subplot(322)
 		# plt.subplot(332)
 		plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
-		plt.title(stars[0])
 		plt.plot(date, y, color = colors[0])
 		plt.scatter(datedat, ydat, color = colors[s])
 		plt.errorbar(datedat, ydat, yerrdat, np.zeros(len(datedat)), color = colors[s], linestyle = 'None')
@@ -121,7 +122,7 @@ def make_plots(stars,dirs,include_rv=True):
 		#plt.figure(figsize = (5,5))
 		#plt.clf()
 		if include_rv==True:
-			plt.subplot(333)
+			plt.subplot(334)
 		else:
 			plt.subplot(323)
 		# plt.subplot(334)
@@ -141,7 +142,7 @@ def make_plots(stars,dirs,include_rv=True):
 		#plt.figure(figsize = (5,5))
 		#plt.clf()
 		if include_rv==True:
-			plt.subplot(334)
+			plt.subplot(335)
 		else:
 			plt.subplot(324)
 		# plt.subplot(335)
