@@ -42,6 +42,7 @@ def get_rv_data(star,dir):
 	daterv = rv_table[0].tonumpy()
 	rv = rv_table[1].tonumpy()
 	rverr = rv_table[2].tonumpy()
+	mjdrv = rv_table[3].tonumpy()
 	
 	# return vz, daterv, rv, rverr
 	return daterv, rv, rverr
@@ -199,4 +200,3 @@ def make_plots(stars,dirs,include_rv=True):
 			plt.ylabel('Dec Residual (arcsec)')
 			plt.xlim([1995, 2020])
 		
-	
