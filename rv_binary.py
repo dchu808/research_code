@@ -15,7 +15,7 @@ def extract_chains(mnestfile,star_num=0):
     ##also assumes no extended mass
 
     ##get information from the chains file
-	##came from around line 142 of efit5_util_final.plot_param_hist
+    ##came from around line 142 of efit5_util_final.plot_param_hist
     inFile = np.genfromtxt(mnestfile)
     ##weights are the first column of chains file
     weights = inFile[:,0]
@@ -38,11 +38,57 @@ def extract_chains(mnestfile,star_num=0):
     logLikes = inFile[:,1]
     where_max = np.argmin(logLikes)
     
-	##make histogram of the chains values, with weights
-	
-	
+    ##make histogram of the chains values, with weights
     
-def rv_resid_file(rv_file,model_file,star):
+def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
+    ##make model from orbital parameters
+    ##working from make_model_orbitparams in efit5_util_final, but modifying it to not output file
+    
+    times = np.linspace(tmin, tmax, ((tmax - tmin)/increment) + 1.)
+    vz_model = np.zeros(len(times))
+    for j in range(len(times)):
+        t = times[j]
+        # MAP parameters
+        elem = np.zeros(8)
+        elem[0] = orbit_params[6]  # Distance
+        elem[2] = orbit_params[10]  # Period
+        elem[3] = orbit_params[12] # Eccentricity
+        elem[4] = orbit_params[11] #t0
+        elem[5] = orbit_params[8]  #w
+        elem[6] = orbit_params[9]  #i
+        elem[7] = orbit_params[7]  #Omega
+        
+        # Get a from M and Period
+        mass = orbit_params[0]
+        # Add drift
+        xo = orbit_params[1]
+        yo = orbit_params[2]
+        Vxo = orbit_params[3]
+        Vyo = orbit_params[4]
+        Vzo = orbit_params[5]
+        drift_params = (xo, yo, Vxo, Vyo, Vzo)
+        
+        x, y, z, vx, vy, vz, v = efit5_util_final.get_orbit_prediction(elem, t, mass, drift_params)
+        
+        ##instead of writing file, just make array of vz (that's all we're interested in)
+        vz_model[i] = vz[i]
+        
+    ##goal is to output 2 arrays: 1 time array, 1 array of vz_model
+    return times, vz_model
+
+def open_rv_file(rv_file):
+    ##open the rv_file once, to help speed of program
+    ##make an array of rv data, keep it throughout loop of program
+    rv_table = asciidata.open(rv_file)
+    #read in RV data
+    daterv = rv_table[0].tonumpy()
+    rv = rv_table[1].tonumpy()
+    rverr = rv_table[2].tonumpy()
+    mjdrv = rv_table[3].tonumpy()
+
+    return daterv, rv, rverr, mjdrv
+    
+def make_rv_resid_file(rv_file,model_file,star):
     rv_table = asciidata.open(rv_file)
     #read in RV data
     daterv = rv_table[0].tonumpy()
