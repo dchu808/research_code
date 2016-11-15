@@ -87,7 +87,24 @@ def open_rv_file(rv_file):
     mjdrv = rv_table[3].tonumpy()
 
     return daterv, rv, rverr, mjdrv
+
+def calc_resid(daterv, rv, rverr, mjdrv, times, vz_model):
+    ##calculate the residuals from rv file and model generated from chains
+    daterv, rv, rverr, mjdrv = open_rv_file(rv_file)
+    times, vz_model = make_model(orbit_params)
     
+    ##calculate the residuals from the fit
+    idx = np.zeros(len(rv), dtype = int)
+    resid = np.zeros(len(rv))
+    for i in range(len(rv)):
+        minimum = (np.abs(times-daterv[i])).argmin()
+        idx[i] = minimum 
+    # print idx
+    for i in range(len(rv)):
+        resid[i] = rv[i] + vz_model[idx[i]]
+	
+	return resid
+
 def make_rv_resid_file(rv_file,model_file,star):
     rv_table = asciidata.open(rv_file)
     #read in RV data
