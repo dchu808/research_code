@@ -7,8 +7,9 @@ import asciidata
 import efit5_util_final
 from astropy.stats import LombScargle
 import astropy.units as u
+from tqdm import tqdm
 
-def main_code(mnestfile,star_num=0,rv_file):
+def main_code(mnestfile,rv_file,star_num=0):
     ##extract a model from the multinest run, usually file is efit_.txt
     ##a lot of this code came from efit5_util_final.plot_param_hist
     ##this only focuses on when BH parameters are not fixed
@@ -29,11 +30,14 @@ def main_code(mnestfile,star_num=0,rv_file):
     ##came from around line 142 of efit5_util_final.plot_param_hist
     inFile = np.genfromtxt(mnestfile)
 
-	##make power file
-	power_output = open('power_file.txt','w')
+    ##frequency file
+    freq_output = open('freq_file.txt','w')
+    
+    ##make power file
+    power_output = open('power_file.txt','w')
 
     ##start looping through each chain in the chains file
-    for j in range(len(inFile)):
+    for j in tqdm(range(len(inFile))):
         
         params = np.zeros(13)
         ##weights are the first column of chains file
@@ -62,17 +66,21 @@ def main_code(mnestfile,star_num=0,rv_file):
         times, vz_model = make_model(params)
         
         ##once the model is generated, get the residuals
-        resid = calc_resid(date_rv, rv, rverr, times, vz_model)
+        resid = calc_resid(daterv, rv, rverr, times, vz_model)
         
         ##with residuals, Lomb Scargle can be run
         frequency, power = lombscargle(mjdrv,resid,rverr)
-		
-		##write to the power file
-		power_output.write(power)
-		power_output.write("\n")
+        #print power
+        ##write to the power file
+        for p in power:
+            power_output.write("{} ".format(p))
+        # power_output.write(power)
+        power_output.write("\n")
         
-	##make frequency file
-	output.write(frequency) ##name the file
+    ##make frequency file
+    freq_output.write(frequency)
+    power_output.close()
+    freq_output.close()
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
     ##make model from orbital parameters
