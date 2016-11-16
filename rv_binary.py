@@ -8,37 +8,71 @@ import efit5_util_final
 from astropy.stats import LombScargle
 import astropy.units as u
 
-def extract_chains(mnestfile,star_num=0):
+def main_code(mnestfile,star_num=0,rv_file):
     ##extract a model from the multinest run, usually file is efit_.txt
     ##a lot of this code came from efit5_util_final.plot_param_hist
     ##this only focuses on when BH parameters are not fixed
     ##also assumes no extended mass
+    
+    ##open the rv_file once, to help speed of program
+    ##make an array of rv data, keep it throughout loop of program
+    rv_table = asciidata.open(rv_file)
+    #read in RV data
+    daterv = rv_table[0].tonumpy()
+    rv = rv_table[1].tonumpy()
+    rverr = rv_table[2].tonumpy()
+    mjdrv = rv_table[3].tonumpy()
+
+    ##make a power array for each frequency
 
     ##get information from the chains file
     ##came from around line 142 of efit5_util_final.plot_param_hist
     inFile = np.genfromtxt(mnestfile)
-    ##weights are the first column of chains file
-    weights = inFile[:,0]
+
+	##make power file
+	power_output = open('power_file.txt','w')
+
+    ##start looping through each chain in the chains file
+    for j in range(len(inFile)):
+        
+        params = np.zeros(13)
+        ##weights are the first column of chains file
+        # weights = inFile[j,0]
     
-    ##get orbital parameter values from chains file
-    mass = inFile[:,2]
-    xo = -inFile[:,3]
-    yo = inFile[:,4]
-    Vx = -inFile[:,5]
-    Vy = inFile[:,6]
-    Vz = inFile[:,7]
-    D = inFile[:,8]
-    Omega = inFile[:,9+star_num*6]
-    omega = inFile[:,10+star_num*6]
-    i = inFile[:,11+star_num*6]
-    P = inFile[:,12+star_num*6]
-    To = inFile[:,13+star_num*6]
-    e = inFile[:,14+star_num*6]
-    T_next = To + P
-    logLikes = inFile[:,1]
-    where_max = np.argmin(logLikes)
-    
-    ##make histogram of the chains values, with weights
+        ##get orbital parameter values from chains file
+        params[0] = inFile[j,2]        ##mass
+        params[1] = -inFile[j,3]     ##xo
+        params[2] = inFile[j,4]            ##yo
+        params[3] = -inFile[j,5]            ##Vx
+        params[4] = inFile[j,6]            ##Vy
+        params[5] = inFile[j,7]            ##Vz
+        params[6] = inFile[j,8]                ##D
+        params[7] = inFile[j,9+star_num*6]        ##Omega
+        params[8] = inFile[j,10+star_num*6]        ##omega
+        params[9] = inFile[j,11+star_num*6]            ##i
+        params[10] = inFile[j,12+star_num*6]            ##P
+        params[11] = inFile[j,13+star_num*6]        ##To
+        params[12] = inFile[j,14+star_num*6]            ##e
+        # T_next = To + P
+        # logLikes = inFile[j,1]
+        # where_max = np.argmin(logLikes)
+
+        ##with these parameters, can generate a model from them
+        ##only produces array of times and vz_model 
+        times, vz_model = make_model(params)
+        
+        ##once the model is generated, get the residuals
+        resid = calc_resid(date_rv, rv, rverr, times, vz_model)
+        
+        ##with residuals, Lomb Scargle can be run
+        frequency, power = lombscargle(mjdrv,resid,rverr)
+		
+		##write to the power file
+		power_output.write(power)
+		power_output.write("\n")
+        
+	##make frequency file
+	output.write(frequency) ##name the file
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
     ##make model from orbital parameters
@@ -71,7 +105,7 @@ def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
         x, y, z, vx, vy, vz, v = efit5_util_final.get_orbit_prediction(elem, t, mass, drift_params)
         
         ##instead of writing file, just make array of vz (that's all we're interested in)
-        vz_model[i] = vz[i]
+        vz_model[j] = vz
         
     ##goal is to output 2 arrays: 1 time array, 1 array of vz_model
     return times, vz_model
@@ -88,10 +122,9 @@ def open_rv_file(rv_file):
 
     return daterv, rv, rverr, mjdrv
 
-def calc_resid(daterv, rv, rverr, mjdrv, times, vz_model):
+def calc_resid(daterv, rv, rverr, times, vz_model):
     ##calculate the residuals from rv file and model generated from chains
-    daterv, rv, rverr, mjdrv = open_rv_file(rv_file)
-    times, vz_model = make_model(orbit_params)
+    # times, vz_model = make_model(orbit_params)
     
     ##calculate the residuals from the fit
     idx = np.zeros(len(rv), dtype = int)
@@ -102,8 +135,8 @@ def calc_resid(daterv, rv, rverr, mjdrv, times, vz_model):
     # print idx
     for i in range(len(rv)):
         resid[i] = rv[i] + vz_model[idx[i]]
-	
-	return resid
+    
+    return resid
 
 def make_rv_resid_file(rv_file,model_file,star):
     rv_table = asciidata.open(rv_file)
@@ -136,7 +169,7 @@ def make_rv_resid_file(rv_file,model_file,star):
     output.close()
 
 ##lomb scargle process
-def lombscargle(resid_file):
+def lombscargle_file(resid_file):
     data = np.genfromtxt(resid_file, names=['rvmjd','resid','rverr'])
     # print
     # print len(data)
@@ -155,3 +188,8 @@ def lombscargle(resid_file):
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     plt.show()
+
+def lombscargle(mjd,resid,rverr):
+    ##maximum frequency works out to about 1000 day period
+    frequency, power = LombScargle(mjd,rverr,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.)
+    return frequency, power
