@@ -24,24 +24,35 @@ def main_code(mnestfile,rv_file,star_num=0):
     rverr = rv_table[2].tonumpy()
     mjdrv = rv_table[3].tonumpy()
 
-    ##make a power array for each frequency
-
     ##get information from the chains file
     ##came from around line 142 of efit5_util_final.plot_param_hist
     inFile = np.genfromtxt(mnestfile)
 
     ##frequency file
-    freq_output = open('freq_file.txt','w')
+    # freq_output = open('freq_file.txt','w')
+    ##.txt file is too large, using np.save instead
+    # freq_array = np.zeros(10000)
+    freq_array = np.linspace(0.1,1.,10000)
     
     ##make power file
-    power_output = open('power_file.txt','w')
+    # power_output = open('power_file.txt','w')
+    ##.txt file is too large, using np.save instead
+    big_power_array = np.zeros((len(inFile),len(freq_array)))
+
+    ##Make an array for reduced chisquare of each model produced by chains
+    red_chisq_arr = np.zeros(len(inFile))
+
+	##weights array
+	chain_weights = np.zeros(len(inFile))
 
     ##start looping through each chain in the chains file
     for j in tqdm(range(len(inFile))):
+    ##as a test, shorten the loop
+    # for j in tqdm(range(20)):
         
         params = np.zeros(13)
         ##weights are the first column of chains file
-        # weights = inFile[j,0]
+        chain_weights[j] = inFile[j,0]
     
         ##get orbital parameter values from chains file
         params[0] = inFile[j,2]        ##mass
@@ -66,21 +77,60 @@ def main_code(mnestfile,rv_file,star_num=0):
         times, vz_model = make_model(params)
         
         ##once the model is generated, get the residuals
-        resid = calc_resid(daterv, rv, rverr, times, vz_model)
+        resid, red_chisq = calc_resid(daterv, rv, rverr, times, vz_model)
+        red_chisq_arr[j] = red_chisq
         
         ##with residuals, Lomb Scargle can be run
-        frequency, power = lombscargle(mjdrv,resid,rverr)
+        power = lombscargle(mjdrv,resid,rverr)
+        big_power_array[j] = power
+        # big_power_array = np.append(big_power_array,power,axis=0)
+
         #print power
         ##write to the power file
-        for p in power:
-            power_output.write("{} ".format(p))
-        # power_output.write(power)
-        power_output.write("\n")
+        # for p in power:
+        #     power_output.write("{} ".format(p))
+        # # power_output.write(power)
+        # power_output.write("\n")
         
     ##make frequency file
-    freq_output.write(frequency)
-    power_output.close()
-    freq_output.close()
+    # freq_output.write(frequency)
+    # power_output.close()
+    # freq_output.close()
+
+    ##append frequency to freq array
+    # freq_array = np.append(freq_array,frequency)
+
+    ##save using numpy.save, faster than txt files
+    np.save('power_array',big_power_array)
+    np.save('freq_array',freq_array)
+    np.save('chi_squares',red_chisq_arr)
+
+def envelope_cdf(freqarray,powerarray,mnestfile):
+    ##calculate cdf
+    ##weights are in the mnestfile
+    
+    ##get the frequencies
+    # freq = np.genfromtxt(freq_file)
+    ##turn the frequencies into periods, which is inverse
+    # periods = 1./freq
+    
+    ##make array of weights, first column in chains file
+    inFile = np.genfromtxt(mnestfile)
+    weights = inFile[:,0]
+	##in the future, array of weights will be produced
+	# weights = np.load(weights_array)
+
+    power_array = np.load(powerarray)
+	freq_array = np.load(freqarray)
+
+    ##go through the power file one line at a time to make cdfs
+    ##Each value in one row has a weight value attached to it as well
+    for j in range(len(power_file)):
+        # power_array = [j]
+    ##tests
+    # print powerfile[0]
+    # print powerfile[0][0]
+    # print weights[0]
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
     ##make model from orbital parameters
@@ -137,14 +187,19 @@ def calc_resid(daterv, rv, rverr, times, vz_model):
     ##calculate the residuals from the fit
     idx = np.zeros(len(rv), dtype = int)
     resid = np.zeros(len(rv))
+    chisq = np.zeros(len(rv))
     for i in range(len(rv)):
         minimum = (np.abs(times-daterv[i])).argmin()
         idx[i] = minimum 
     # print idx
     for i in range(len(rv)):
         resid[i] = rv[i] + vz_model[idx[i]]
-    
-    return resid
+        ##calculate chisquare
+        chisq[i] = resid[i]**2/np.abs(vz_model[idx[i]])
+    ##sum array chisq to get the chi-squared
+    ##divide by datapoints - 1 for reduced chi-squared
+    red_chisq = np.sum(chisq)/(len(rv) - 1) 
+    return resid, red_chisq
 
 def make_rv_resid_file(rv_file,model_file,star):
     rv_table = asciidata.open(rv_file)
@@ -191,13 +246,20 @@ def lombscargle_file(resid_file):
     # print mjd
     # mjd_days = mjd * u.day
     ##maximum frequency works out to about 1000 day period
-    frequency, power = LombScargle(mjd,rverr,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.)
-    plt.plot(1./frequency, power)
+    frequency, power = LombScargle(mjd,rverr,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.,samples_per_peak=2.,method='fast')
+    print len(frequency)
+    #plt.plot(1./frequency, power)
+    plt.semilogx(1./frequency, power)
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
+    #plt.xlim(0,30)
     plt.show()
 
 def lombscargle(mjd,resid,rverr):
     ##maximum frequency works out to about 1000 day period
-    frequency, power = LombScargle(mjd,rverr,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.)
-    return frequency, power
+    ##reducing number of samples at peak to help with calculations
+    # frequency, power = LombScargle(mjd,rverr,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.,samples_per_peak=2.,method='fast')
+    ##doing a uniform sample of frequency between 1 day
+    frequency = np.linspace(0.1,1.,10000)
+    power = LombScargle(mjd,rverr,rverr).power(frequency,method='fast')
+    return power
