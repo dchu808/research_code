@@ -123,10 +123,43 @@ def envelope_cdf(freqarray,powerarray,mnestfile):
     power_array = np.load(powerarray)
 	freq_array = np.load(freqarray)
 
+    ##create an array of median power values for each frequency
+    median_array = np.zeros(len(freq_array))
+    
+    ##do same for +/- 1 sigma
+    minus_array = np.zeros(len(freq_array))
+    plus_array = np.zeros(len(freq_array))
+    
     ##go through the power file one line at a time to make cdfs
     ##Each value in one row has a weight value attached to it as well
-    for j in range(len(power_file)):
-        # power_array = [j]
+    for j in range(len(power_array)):
+        ##each column is the power of a particular frequency. Read through columns
+        col = power_array[:,j]
+        ##want to take cdf of this column
+        ##start take by making a histogram, weighting it by weights
+        power = np.histogram(col,bins='auto',normed=False,weights=weights)
+        
+        ##start cdf process, normalize
+        power = np.array(power, dtype=float)/power.sum()
+        
+        ##peak power, if needed
+        sid = (power.argsort())[::-1] # indices for a reverse sort
+        powerSort = power[sid]
+        
+        ##cdf
+        cdf = np.cumsum(powerSort)
+        
+        ##Determine points for median, +/- 1 sigma
+        idxm = (np.where(cdf > 0.5))[0] #median
+        idx1m = (np.where(cdf > 0.3173))[0] #1 sigma minus
+        idx1p = (np.where(cdf > 0.6827))[0] #1 sigma plus
+        
+        median = powerSort[idxm[0]]
+        level1m = powerSort[idx1m[0]]
+        level1p = powerSort[idx1p[0]]
+        
+        # for i in range(len(freq_array))
+        
     ##tests
     # print powerfile[0]
     # print powerfile[0][0]
