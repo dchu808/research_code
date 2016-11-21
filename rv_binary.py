@@ -9,7 +9,7 @@ from astropy.stats import LombScargle
 import astropy.units as u
 from tqdm import tqdm
 
-def main_code(mnestfile,rv_file,star_num=0):
+def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
     ##extract a model from the multinest run, usually file is efit_.txt
     ##a lot of this code came from efit5_util_final.plot_param_hist
     ##this only focuses on when BH parameters are not fixed
@@ -32,7 +32,7 @@ def main_code(mnestfile,rv_file,star_num=0):
     # freq_output = open('freq_file.txt','w')
     ##.txt file is too large, using np.save instead
     # freq_array = np.zeros(10000)
-    freq_array = np.linspace(0.1,1.,10000)
+    freq_array = np.linspace(min_freq,max_freq,10000)
     
     ##make power file
     # power_output = open('power_file.txt','w')
@@ -42,8 +42,8 @@ def main_code(mnestfile,rv_file,star_num=0):
     ##Make an array for reduced chisquare of each model produced by chains
     red_chisq_arr = np.zeros(len(inFile))
 
-	##weights array
-	chain_weights = np.zeros(len(inFile))
+    ##weights array
+    chain_weights = np.zeros(len(inFile))
 
     ##start looping through each chain in the chains file
     for j in tqdm(range(len(inFile))):
@@ -81,7 +81,7 @@ def main_code(mnestfile,rv_file,star_num=0):
         red_chisq_arr[j] = red_chisq
         
         ##with residuals, Lomb Scargle can be run
-        power = lombscargle(mjdrv,resid,rverr)
+        power = lombscargle(mjdrv,resid,rverr,min_freq,max_freq)
         big_power_array[j] = power
         # big_power_array = np.append(big_power_array,power,axis=0)
 
@@ -117,11 +117,11 @@ def envelope_cdf(freqarray,powerarray,mnestfile):
     ##make array of weights, first column in chains file
     inFile = np.genfromtxt(mnestfile)
     weights = inFile[:,0]
-	##in the future, array of weights will be produced
-	# weights = np.load(weights_array)
+    ##in the future, array of weights will be produced
+    # weights = np.load(weights_array)
 
     power_array = np.load(powerarray)
-	freq_array = np.load(freqarray)
+    freq_array = np.load(freqarray)
 
     ##create an array of median power values for each frequency
     median_array = np.zeros(len(freq_array))
@@ -158,7 +158,11 @@ def envelope_cdf(freqarray,powerarray,mnestfile):
         level1m = powerSort[idx1m[0]]
         level1p = powerSort[idx1p[0]]
         
-        # for i in range(len(freq_array))
+        ##write these values to arrays
+        for i in range(len(freq_array)):
+            median_array[i] = median
+            minus_array[i] = level1m
+            plus_array[i] = level1p
         
     ##tests
     # print powerfile[0]
@@ -288,11 +292,12 @@ def lombscargle_file(resid_file):
     #plt.xlim(0,30)
     plt.show()
 
-def lombscargle(mjd,resid,rverr):
-    ##maximum frequency works out to about 1000 day period
+def lombscargle(mjd,resid,rverr,min_freq,max_freq):
+    ##maximum frequency of .001 works out to about 1000 day period
     ##reducing number of samples at peak to help with calculations
     # frequency, power = LombScargle(mjd,rverr,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.,samples_per_peak=2.,method='fast')
-    ##doing a uniform sample of frequency between 1 day
-    frequency = np.linspace(0.1,1.,10000)
+    ##doing a uniform sample of frequency
+    # frequency = np.linspace(0.1,1.,10000)
+    frequency = np.linspace(min_freq,max_freq,10000)
     power = LombScargle(mjd,rverr,rverr).power(frequency,method='fast')
     return power
