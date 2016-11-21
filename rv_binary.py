@@ -105,7 +105,7 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
     np.save('freq_array',freq_array)
     np.save('chi_squares',red_chisq_arr)
 
-def envelope_cdf(freqarray,powerarray,mnestfile):
+def envelope_cdf(freqarray,powerarray,weights_array):
     ##calculate cdf
     ##weights are in the mnestfile
     
@@ -115,10 +115,10 @@ def envelope_cdf(freqarray,powerarray,mnestfile):
     # periods = 1./freq
     
     ##make array of weights, first column in chains file
-    inFile = np.genfromtxt(mnestfile)
-    weights = inFile[:,0]
+    # inFile = np.genfromtxt(mnestfile)
+    # weights = inFile[:,0]
     ##in the future, array of weights will be produced
-    # weights = np.load(weights_array)
+    weights = np.load(weights_array)
 
     power_array = np.load(powerarray)
     freq_array = np.load(freqarray)
@@ -132,15 +132,15 @@ def envelope_cdf(freqarray,powerarray,mnestfile):
     
     ##go through the power file one line at a time to make cdfs
     ##Each value in one row has a weight value attached to it as well
-    for j in range(len(power_array)):
+    for j in tqdm(range(len(freq_array))):
         ##each column is the power of a particular frequency. Read through columns
         col = power_array[:,j]
         ##want to take cdf of this column
         ##start take by making a histogram, weighting it by weights
-        power = np.histogram(col,bins='auto',normed=False,weights=weights)
-        
+        power,bin_edges = np.histogram(col,bins=1000,normed=False,weights=weights)
+        # print power
         ##start cdf process, normalize
-        power = np.array(power, dtype=float)/power.sum()
+        power = np.array(power, dtype=float) / power.sum()
         
         ##peak power, if needed
         sid = (power.argsort())[::-1] # indices for a reverse sort
@@ -159,16 +159,31 @@ def envelope_cdf(freqarray,powerarray,mnestfile):
         level1p = powerSort[idx1p[0]]
         
         ##write these values to arrays
-        for i in range(len(freq_array)):
-            median_array[i] = median
-            minus_array[i] = level1m
-            plus_array[i] = level1p
-        
-    ##tests
-    # print powerfile[0]
-    # print powerfile[0][0]
-    # print weights[0]
+        median_array[j] = median
+        minus_array[j] = level1m
+        plus_array[j] = level1p
     
+    np.save('median_array', median_array)
+    np.save('minus_array', minus_array)
+    np.save('plus_array', plus_array)
+    
+def plot_env(freqarray,median,plus_env,minus_env):
+    ##make a plot of the Lomb Scargle, plotting median power, +/- 1 sigma
+    frequency = np.load(freqarray)
+    median = np.load(median)
+    plus = np.load(plus_env)
+    minus = np.load(minus_env)
+    
+    # print frequency
+    ##plot the function
+    plt.semilogx(1/frequency, median)
+    # plt.plot(1./frequency, median)
+    plt.xlabel('Period (Days)')
+    plt.ylabel('Power')
+    plt.ylim(0,1.5)
+    #plt.xlim(0,30)
+    plt.show()
+
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
     ##make model from orbital parameters
     ##working from make_model_orbitparams in efit5_util_final, but modifying it to not output file
