@@ -46,9 +46,9 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
     chain_weights = np.zeros(len(inFile))
 
     ##start looping through each chain in the chains file
-    # for j in tqdm(range(len(inFile))):
+    for j in tqdm(range(len(inFile))):
     ##as a test, shorten the loop
-    for j in tqdm(range(1)):
+    # for j in tqdm(range(1)):
         
         params = np.zeros(13)
         ##weights are the first column of chains file
@@ -266,7 +266,7 @@ def calc_resid(daterv, rv, rverr, times, vz_model):
         idx[i] = minimum 
     # print idx
     for i in range(len(rv)):
-        resid[i] = rv[i] + vz_model[idx[i]]
+        resid[i] = rv[i] - vz_model[idx[i]]
         ##calculate chisquare
         chisq[i] = resid[i]**2/np.abs(vz_model[idx[i]])
     ##sum array chisq to get the chi-squared
