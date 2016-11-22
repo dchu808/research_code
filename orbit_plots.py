@@ -51,7 +51,7 @@ def get_rv_data(star,dir):
 def get_rv_model(star,dir):
 	model_table = asciidata.open(dir + 'orbit.'+star+'.model')
 	## RV from model
-	vz = -model_table[6].tonumpy()
+	vz = model_table[6].tonumpy()
 	return vz
 	
 ##make plots
@@ -179,7 +179,7 @@ def make_plots(stars,dirs,include_rv=True):
 			##make RV vs time
 			plt.subplot(333)
 			plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
-			plt.plot(date, -vz, color = colors[0])
+			plt.plot(date, vz, color = colors[0])
 			plt.scatter(daterv, rv, color = colors[0])
 			plt.errorbar(daterv, rv, rverr, np.zeros(len(daterv)), color = colors[0], linestyle = 'None')
 			plt.xlabel('Date (years)')
@@ -194,8 +194,8 @@ def make_plots(stars,dirs,include_rv=True):
 			for i in range(len(rv)):
 				minimum_2 = (np.abs(date-daterv[i])).argmin()
 				idx_2[i] = minimum_2
-			plt.scatter(daterv, rv + vz[idx_2], color = colors[0])
-			plt.errorbar(daterv, rv + vz[idx_2], rverr, np.zeros(len(daterv)), color = colors[0], linestyle = 'None')
+			plt.scatter(daterv, rv - vz[idx_2], color = colors[0])
+			plt.errorbar(daterv, rv - vz[idx_2], rverr, np.zeros(len(daterv)), color = colors[0], linestyle = 'None')
 			plt.xlabel('Date (years)')
 			plt.ylabel('Dec Residual (arcsec)')
 			plt.xlim([1995, 2020])
