@@ -81,8 +81,8 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
         red_chisq_arr[j] = red_chisq
 
         ##test
-        print resid
-        print red_chisq_arr
+        # print resid
+        # print red_chisq_arr
         
         ##with residuals, Lomb Scargle can be run
         power = lombscargle(mjdrv,resid,rverr,min_freq,max_freq)
