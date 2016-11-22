@@ -46,9 +46,9 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
     chain_weights = np.zeros(len(inFile))
 
     ##start looping through each chain in the chains file
-    for j in tqdm(range(len(inFile))):
+    # for j in tqdm(range(len(inFile))):
     ##as a test, shorten the loop
-    # for j in tqdm(range(20)):
+    for j in tqdm(range(1)):
         
         params = np.zeros(13)
         ##weights are the first column of chains file
@@ -79,6 +79,10 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
         ##once the model is generated, get the residuals
         resid, red_chisq = calc_resid(daterv, rv, rverr, times, vz_model)
         red_chisq_arr[j] = red_chisq
+
+        ##test
+        print resid
+        print red_chisq_arr
         
         ##with residuals, Lomb Scargle can be run
         power = lombscargle(mjdrv,resid,rverr,min_freq,max_freq)
@@ -140,11 +144,13 @@ def envelope_cdf(freqarray,powerarray,weights_array):
         power,bin_edges = np.histogram(col,bins=1000,normed=False,weights=weights)
         # print power
         ##start cdf process, normalize
-        power = np.array(power, dtype=float) / power.sum()
+        power_norm = np.array(power, dtype=float) / power.sum()
         
-        ##peak power, if needed
-        sid = (power.argsort())[::-1] # indices for a reverse sort
-        powerSort = power[sid]
+        # sid = (power_norm.argsort())[::-1] # indices for a reverse sort
+        sid = (power_norm.argsort())
+        powerSort = power_norm[sid]
+        ##sort the original power array - should be the same as powerSort, but not normalized
+        powerSort_not_norm = power[sid]
         
         ##cdf
         cdf = np.cumsum(powerSort)
@@ -154,10 +160,18 @@ def envelope_cdf(freqarray,powerarray,weights_array):
         idx1m = (np.where(cdf > 0.3173))[0] #1 sigma minus
         idx1p = (np.where(cdf > 0.6827))[0] #1 sigma plus
         
-        median = powerSort[idxm[0]]
-        level1m = powerSort[idx1m[0]]
-        level1p = powerSort[idx1p[0]]
-        
+        median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
+        level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
+        level1p = bin_edges[idx1p[0]] + 0.5*(bin_edges[1]-bin_edges[0])
+
+        # median = powerSort[idxm[0]]
+        # level1m = powerSort[idx1m[0]]
+        # level1p = powerSort[idx1p[0]]
+        ##Use the original power values
+        # median = powerSort_not_norm[idxm]
+        # level1m = powerSort_not_norm[idx1m]
+        # level1p = powerSort_not_norm[idx1p]
+
         ##write these values to arrays
         median_array[j] = median
         minus_array[j] = level1m
@@ -176,12 +190,19 @@ def plot_env(freqarray,median,plus_env,minus_env):
     
     # print frequency
     ##plot the function
-    plt.semilogx(1/frequency, median)
-    # plt.plot(1./frequency, median)
+    plt.semilogx(1/frequency, plus, color ='gray',alpha=.5)
+    plt.semilogx(1/frequency, median, color ='black')
+    # plt.semilogx(1/frequency, minus, color ='red',alpha=.5)
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
-    plt.ylim(0,1.5)
+    # plt.ylim(0,1.5)
     #plt.xlim(0,30)
+    plt.show()
+
+    plt.semilogx(1/frequency, median - minus, color ='black')
+    plt.show()
+    
+    plt.semilogx(1/frequency, plus - median, color ='black')
     plt.show()
 
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
@@ -301,10 +322,10 @@ def lombscargle_file(resid_file):
     frequency, power = LombScargle(mjd,rverr,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.,samples_per_peak=2.,method='fast')
     print len(frequency)
     #plt.plot(1./frequency, power)
-    plt.semilogx(1./frequency, power)
+    plt.semilogx(1./frequency, power, color='black')
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
-    #plt.xlim(0,30)
+    plt.xlim(0,10)
     plt.show()
 
 def lombscargle(mjd,resid,rverr,min_freq,max_freq):
