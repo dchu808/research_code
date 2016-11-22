@@ -107,10 +107,10 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
     # freq_array = np.append(freq_array,frequency)
 
     ##save using numpy.save, faster than txt files
-    # np.save('power_array',big_power_array)
-    # np.save('freq_array',freq_array)
-    # np.save('chi_squares',red_chisq_arr)
-    # np.save('weights',chain_weights)
+    np.save('power_array',big_power_array)
+    np.save('freq_array',freq_array)
+    np.save('chi_squares',red_chisq_arr)
+    np.save('weights',chain_weights)
 
 def envelope_cdf(freqarray,powerarray,weights_array):
     ##calculate cdf
