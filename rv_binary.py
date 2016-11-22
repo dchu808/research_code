@@ -48,7 +48,7 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
     ##start looping through each chain in the chains file
     for j in tqdm(range(len(inFile))):
     ##as a test, shorten the loop
-    # for j in tqdm(range(1)):
+    # for j in tqdm(range(10)):
         
         params = np.zeros(13)
         ##weights are the first column of chains file
@@ -75,7 +75,8 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
         ##with these parameters, can generate a model from them
         ##only produces array of times and vz_model 
         times, vz_model = make_model(params)
-        
+        # print vz_model
+
         ##once the model is generated, get the residuals
         resid, red_chisq = calc_resid(daterv, rv, rverr, times, vz_model)
         red_chisq_arr[j] = red_chisq
@@ -87,6 +88,7 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
         ##with residuals, Lomb Scargle can be run
         power = lombscargle(mjdrv,resid,rverr,min_freq,max_freq)
         big_power_array[j] = power
+        # print power
         # big_power_array = np.append(big_power_array,power,axis=0)
 
         #print power
@@ -105,10 +107,10 @@ def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
     # freq_array = np.append(freq_array,frequency)
 
     ##save using numpy.save, faster than txt files
-    np.save('power_array',big_power_array)
-    np.save('freq_array',freq_array)
-    np.save('chi_squares',red_chisq_arr)
-    np.save('weights',chain_weights)
+    # np.save('power_array',big_power_array)
+    # np.save('freq_array',freq_array)
+    # np.save('chi_squares',red_chisq_arr)
+    # np.save('weights',chain_weights)
 
 def envelope_cdf(freqarray,powerarray,weights_array):
     ##calculate cdf
@@ -142,7 +144,7 @@ def envelope_cdf(freqarray,powerarray,weights_array):
         col = power_array[:,j]
         ##want to take cdf of this column
         ##start take by making a histogram, weighting it by weights
-        power,bin_edges = np.histogram(col,bins=1000,normed=False,weights=weights)
+        power,bin_edges = np.histogram(col,bins=10000,normed=False,weights=weights)
         # print power
         ##start cdf process, normalize
         power_norm = np.array(power, dtype=float) / power.sum()
@@ -151,7 +153,7 @@ def envelope_cdf(freqarray,powerarray,weights_array):
         sid = (power_norm.argsort())
         powerSort = power_norm[sid]
         ##sort the original power array - should be the same as powerSort, but not normalized
-        powerSort_not_norm = power[sid]
+        # powerSort_not_norm = power[sid]
         
         ##cdf
         cdf = np.cumsum(powerSort)
@@ -320,7 +322,7 @@ def lombscargle_file(resid_file):
     # print mjd
     # mjd_days = mjd * u.day
     ##maximum frequency works out to about 1000 day period
-    frequency, power = LombScargle(mjd,rverr,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.,samples_per_peak=2.,method='fast')
+    frequency, power = LombScargle(mjd,resid,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.,samples_per_peak=2.,method='fast')
     print len(frequency)
     #plt.plot(1./frequency, power)
     plt.semilogx(1./frequency, power, color='black')
@@ -336,5 +338,5 @@ def lombscargle(mjd,resid,rverr,min_freq,max_freq):
     ##doing a uniform sample of frequency
     # frequency = np.linspace(0.1,1.,10000)
     frequency = np.linspace(min_freq,max_freq,10000)
-    power = LombScargle(mjd,rverr,rverr).power(frequency,method='fast')
+    power = LombScargle(mjd,resid,rverr).power(frequency,method='fast')
     return power
