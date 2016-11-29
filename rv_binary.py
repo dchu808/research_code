@@ -246,7 +246,8 @@ def fold_curve(freqarray,median,resid_file):
     ##look for the highest value
     best_freq_ind = np.argmax(median)
     best_freq = frequency[best_freq_ind]
-    # print 1/best_freq
+    print 1/best_freq
+    print best_freq
     
     t_fit = np.linspace(0,1)
     ##read in residual rv file to plot
@@ -259,8 +260,8 @@ def fold_curve(freqarray,median,resid_file):
     y_fit = LombScargle(mjd,resid,rverr).model(t_fit/best_freq, best_freq)
 
     ##phase the data
-    phase = (mjd * best_freq) % 1
-    
+    phase = (mjd * best_freq) % 1    
+
     plt.figure()
     plt.errorbar(phase,resid,rverr,fmt='o',color='black')
     plt.plot(t_fit,y_fit,color='black')
