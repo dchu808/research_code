@@ -193,21 +193,55 @@ def plot_env(freqarray,median,plus_env,minus_env):
     
     # print frequency
     ##plot the function
-    plt.semilogx(1/frequency, plus, color ='gray',alpha=.5)
-    plt.semilogx(1/frequency, median, color ='black')
-    # plt.semilogx(1/frequency, minus, color ='red',alpha=.5)
+    # plt.semilogx(1/frequency, plus, color ='gray',alpha=.5)
+    # plt.semilogx(1/frequency, median, color ='black')
+    # plt.semilogx(1/frequency, minus, color ='gray',alpha=.5)
+    plt.plot(1/frequency,median,alpha=0)
+    plt.fill_between(1/frequency,median,plus,facecolor='blue', alpha=0.5)
+    plt.fill_between(1/frequency,minus,median,facecolor='blue', alpha=0.5)
+    # plt.set_xscale('log')
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
     #plt.xlim(0,30)
     plt.show()
 
-    plt.semilogx(1/frequency, median - minus, color ='black')
+    # plt.semilogx(1/frequency, median - minus, color ='black')
+    # plt.show()
+    
+    # plt.semilogx(1/frequency, plus - median, color ='black')
+    # plt.show()
+
+def fold_curve(freqarray,median,resid_file):
+    ##plot the rv to a folded period
+    frequency = np.load(freqarray)
+    median = np.load(median)
+    ##look for the highest value
+    best_freq_ind = np.argmax(median)
+    best_freq = frequency[best_freq_ind]
+    # print 1/best_freq
+    
+    t_fit = np.linspace(0,1)
+    ##read in residual rv file to plot
+    data = np.genfromtxt(resid_file)
+    mjd = data[:,0]
+    resid = data[:,1]
+    rverr = data[:,2]
+    # print mjd
+    ##plot the best fit frequency model
+    y_fit = LombScargle(mjd,resid,rverr).model(t_fit/best_freq, best_freq)
+
+    ##phase the data
+    phase = (mjd * best_freq) % 1
+    
+    plt.figure()
+    plt.errorbar(phase,resid,rverr,fmt='o',color='black')
+    plt.plot(t_fit,y_fit,color='black')
+    plt.title('Period in days={0:.3f}'.format(1/best_freq))
+    plt.xlabel('Phase')
+    plt.ylabel('Residual (km/s)')
     plt.show()
     
-    plt.semilogx(1/frequency, plus - median, color ='black')
-    plt.show()
-
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
     ##make model from orbital parameters
     ##working from make_model_orbitparams in efit5_util_final, but modifying it to not output file
