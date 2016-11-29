@@ -197,8 +197,8 @@ def plot_env(freqarray,median,plus_env,minus_env):
     # plt.semilogx(1/frequency, median, color ='black')
     # plt.semilogx(1/frequency, minus, color ='gray',alpha=.5)
     plt.plot(1/frequency,median,alpha=0)
-    plt.fill_between(1/frequency,median,plus,facecolor='blue', alpha=0.5)
-    plt.fill_between(1/frequency,minus,median,facecolor='blue', alpha=0.5)
+    plt.fill_between(1/frequency,median,plus,facecolor='yellow', alpha=0.5)
+    plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
     # plt.set_xscale('log')
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
@@ -211,6 +211,33 @@ def plot_env(freqarray,median,plus_env,minus_env):
     
     # plt.semilogx(1/frequency, plus - median, color ='black')
     # plt.show()
+
+def plot_env_2(freqarray_1,median_1,plus_env_1,minus_env_1,freqarray_2,median_2,plus_env_2,minus_env_2):
+    ##basically combining 2 plot env to expand frequency range
+    frequency_1 = np.load(freqarray_1)
+    median_1 = np.load(median_1)
+    plus_1 = np.load(plus_env_1)
+    minus_1 = np.load(minus_env_1)
+
+    frequency_2 = np.load(freqarray_2)
+    median_2 = np.load(median_2)
+    plus_2 = np.load(plus_env_2)
+    minus_2 = np.load(minus_env_2)
+
+    plt.semilogx(1/frequency_1,median_1,alpha=0)
+    plt.fill_between(1/frequency_1,median_1,plus_1,facecolor='yellow', alpha=0.5)
+    plt.fill_between(1/frequency_1,minus_1,median_1,facecolor='yellow', alpha=0.5)
+
+    plt.semilogx(1/frequency_2,median_2,alpha=0)
+    plt.fill_between(1/frequency_2,median_2,plus_2,facecolor='yellow', alpha=0.5)
+    plt.fill_between(1/frequency_2,minus_2,median_2,facecolor='yellow', alpha=0.5)
+
+    # plt.set_xscale('log')
+    plt.xlabel('Period (Days)')
+    plt.ylabel('Power')
+    # plt.ylim(0,1.5)
+    #plt.xlim(0,30)
+    plt.show()    
 
 def fold_curve(freqarray,median,resid_file):
     ##plot the rv to a folded period
