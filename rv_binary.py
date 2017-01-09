@@ -1,10 +1,12 @@
 ##program explore binary stars with rv data - D.Chu, 2016-11-09
 
 import numpy as np
+import scipy
+from scipy.optimize import leastsq,curve_fit
 import pylab
 import matplotlib.pyplot as plt
 import asciidata
-import efit5_util_final
+#import efit5_util_final
 from astropy.stats import LombScargle
 import astropy.units as u
 from tqdm import tqdm
@@ -269,6 +271,72 @@ def fold_curve(freqarray,median,resid_file):
     plt.xlabel('Phase')
     plt.ylabel('Residual (km/s)')
     plt.show()
+    
+def fit_params(resid_file,freq):
+    ##find the amplitude and phase shift values for fitting phased residual curve
+    ##first need to fold the RV data to a particular frequency
+    ##then fit data to A sin(w*t + phi)
+    ##solve for A and phi
+    ##test freq 0.922322232223
+    
+    ##data from file
+    data = np.genfromtxt(resid_file)
+    mjd = data[:,0]
+    resid = data[:,1]
+    rverr = data[:,2]
+    
+    ##given best frequency to phase:
+    frequency = freq
+    
+    ##phase data to the frequency
+    phase = (mjd * frequency) % 1
+    
+    ##sample around each data point with Gaussian
+    # def sample_data(point,err):
+        # z = np.random.normal(point,err)
+        # return z
+        
+    ##defining the sine function to fit to
+    # def variance((a,p),w,t,v):
+    #     ##sine function, want to find a and p
+    #     z = a * np.sin(w*t + p) - v
+    #     return z
+        
+    def variance(t,a,p):
+        ##sine function, want to find a and p
+        z = a * np.sin(frequency*t + p)
+        return z
+        
+    def residual((a,p)):
+        res = np.array(len(resid))
+        for i in range(resid.size):
+            ##inserting peak frequency, phased time data, residual velocity
+            re = variance((a,p),frequency,phase[i],resid[i])
+            res[i] = re
+        return res
+    
+        
+    ##generating a mock residual curve
+    # mock_resid = np.zeros(len(resid))
+    # for i in range(len(resid)):
+        # mock_resid[i] = sample_data(resid[i],rverr[i])
+        
+    # print mock_resid
+    
+    ##run least square fit
+    # (x1,x2,x3,x4,x5) = leastsq(residual,x0=(10,.01),full_output=True)
+    # print x1
+    
+    (x1,x2) = curve_fit(variance,phase,resid,p0=(2.,0.1),sigma=rverr)
+    ##best fit parameters
+    # print x1
+    print x1[0]
+    print x1[1]
+    #print x2
+    ##want uncertainties from covariance matrix
+    ##uncertainty in amplitude
+    print np.sqrt(x2.diagonal().item(0))
+    print np.sqrt(x2.diagonal().item(1))
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
     ##make model from orbital parameters
