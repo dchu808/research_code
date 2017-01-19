@@ -417,18 +417,26 @@ def make_rv_resid_file(rv_file,model_file,star):
     model_table = asciidata.open(model_file)
     ## RV from model
     date = model_table[0].tonumpy()
-    vz = -model_table[6].tonumpy()
+    vz = model_table[6].tonumpy()
 
     ##calculate the residuals from the fit
     idx = np.zeros(len(rv), dtype = int)
     resid = np.zeros(len(rv))
+    chisq = np.zeros(len(rv))
     for i in range(len(rv)):
         minimum = (np.abs(date-daterv[i])).argmin()
         idx[i] = minimum 
     # print idx
     for i in range(len(rv)):
-        resid[i] = rv[i] + vz[idx[i]]
-    # print resid
+        resid[i] = rv[i] - vz[idx[i]]
+        ##show the chi-square value as well
+        chisq[i] = resid[i]**2/np.abs(vz[idx[i]])
+
+    ##sum array chisq to get the chi-squared
+    ##divide by datapoints - 1 for reduced chi-squared
+    red_chisq = np.sum(chisq)/(len(rv) - 1)
+    print red_chisq    
+    
 
     ##write output file with residals
     output = open(star+'_rv_resid.txt','w')
