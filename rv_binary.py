@@ -9,6 +9,8 @@ import asciidata
 #import efit5_util_final
 from astropy.stats import LombScargle
 import astropy.units as u
+from astropy import constants as const
+#from u import cds
 from tqdm import tqdm
 
 def main_code(mnestfile,rv_file,star_num=0,min_freq=0.1,max_freq=1.):
@@ -478,3 +480,47 @@ def lombscargle(mjd,resid,rverr,min_freq,max_freq):
     frequency = np.linspace(min_freq,max_freq,10000)
     power = LombScargle(mjd,resid,rverr).power(frequency,method='fast')
     return power
+    
+##turn an input of period and velocity max to mass of binary
+##equation is binary mass equation
+
+##define the binary mass function
+
+def bm_equation(m_test,p_days,vmax_kms,mass_s02):
+    ##define the equation first
+    ##period in days, vmax in km/s
+    ##sin^3 i is not included in equation now
+    ##idea is to solve for m in solar masses
+    
+    G = const.G
+    ##mass of S0-2 comes from input
+    ms02 = mass_s02 * u.Msun
+    
+    ##period in days
+    p = p_days * u.d
+    
+    ##vmax in km/s
+    vmax = vmax_kms * (u.km/u.s)
+    
+    ##test value for m
+    m = m_test * u.Msun
+    
+    value = m**3 / (ms02 + m)**2 - p * vmax**3 / (2. * np.pi * G)
+    
+    ##I want to return this value and minimize it
+    ##.value takes out the units
+    return np.abs(value.value)
+    
+def bm_solve(period,vmaxkms,mass_S02):
+    ##sample through a mass array to find companion
+    m_array = np.arange(0.1,10.1,.1)
+    test_values = np.zeros(len(m_array))
+
+    ##loop through mass values to find where the minimum value is for function
+    for i in range(len(m_array)):
+        test_values[i] = bm_equation(m_array[i],period,vmaxkms,mass_S02)
+    # print test_values
+    min_arg = np.argmin(test_values)
+    print min_arg 
+    print test_values[min_arg]
+    print m_array[min_arg]
