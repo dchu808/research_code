@@ -6,7 +6,7 @@ from scipy.optimize import leastsq,curve_fit
 import pylab
 import matplotlib.pyplot as plt
 import asciidata
-#import efit5_util_final
+import efit5_util_final
 from astropy.stats import LombScargle
 import astropy.units as u
 from astropy import constants as const
@@ -521,6 +521,28 @@ def bm_solve(period,vmaxkms,mass_S02):
         test_values[i] = bm_equation(m_array[i],period,vmaxkms,mass_S02)
     # print test_values
     min_arg = np.argmin(test_values)
-    print min_arg 
-    print test_values[min_arg]
-    print m_array[min_arg]
+    # print min_arg 
+    # print test_values[min_arg]
+    # print m_array[min_arg]
+    ##return the mass that best minimizes the function
+    return m_array[min_arg]
+
+##make plot of binary mass vs period
+##requires Vmax vs period file
+def mass_period_plot(file_path,mass_S02):
+    ##read in the file
+    info = np.genfromtxt(file_path)
+    period_array = info[:,0]
+    vmax_array = info[:,1]
+    binary_mass_array = np.zeros(len(period_array))
+    
+    ##feed these array information into the bm_solve function
+    for i in range(len(period_array)):
+        binary_mass_array[i] = bm_solve(period_array[i], vmax_array[i], mass_S02)
+    print binary_mass_array
+    ##make plot of period vs companion mass
+    plt.figure()
+    plt.plot(period_array,binary_mass_array)
+    plt.xlabel('Period (Days)')
+    plt.ylabel('Companion Mass (Solar Masses)')
+    plt.show()
