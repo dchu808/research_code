@@ -505,10 +505,10 @@ def array_append(dir):
 	minus_4 = np.load(dir + 'minus_array_2400day.npy')
 	
 	##start appending arrays
-	complete_freq = np.append(freq_1, freq_2, freq_3, freq_4)
-	complete_med = np.append(med_1, med_2, med_3, med_4)
-	complete_plus = np.append(plus_1, plus_2, plus_3, plus_4)
-	complete_minus = np.append(minus_1, minus_2, minus_3, minus_4)
+	complete_freq = np.concatenate(freq_1, freq_2, freq_3, freq_4)
+	complete_med = np.concatenate(med_1, med_2, med_3, med_4)
+	complete_plus = np.concatenate(plus_1, plus_2, plus_3, plus_4)
+	complete_minus = np.concatenate(minus_1, minus_2, minus_3, minus_4)
 	
 	##save arrays
 	np.save('freq_array_all', complete_freq)
