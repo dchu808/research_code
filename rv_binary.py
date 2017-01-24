@@ -480,6 +480,41 @@ def lombscargle(mjd,resid,rverr,min_freq,max_freq):
     frequency = np.linspace(min_freq,max_freq,10000)
     power = LombScargle(mjd,resid,rverr).power(frequency,method='fast')
     return power
+
+##simple function to append the arrays together to make it easier for plotting
+##these are hard-coded for now
+def array_append(dir):
+	freq_1 = np.load(dir + 'freq_array.npy')
+	freq_2 = np.load(dir + 'freq_array_100day.npy')
+	freq_3 = np.load(dir + 'freq_array_1000day.npy')
+	freq_4 = np.load(dir + 'freq_array_2400day.npy')
+	
+	med_1 = np.load(dir + 'median_array.npy')
+	med_2 = np.load(dir + 'median_array_100day.npy')
+	med_3 = np.load(dir + 'median_array_1000day.npy')
+	med_4 = np.load(dir + 'median_array_2400day.npy')
+	
+	plus_1 = np.load(dir + 'plus_array.npy')
+	plus_2 = np.load(dir + 'plus_array_100day.npy')
+	plus_3 = np.load(dir + 'plus_array_1000day.npy')
+	plus_4 = np.load(dir + 'plus_array_2400day.npy')
+	
+	minus_1 = np.load(dir + 'minus_array.npy')
+	minus_2 = np.load(dir + 'minus_array_100day.npy')
+	minus_3 = np.load(dir + 'minus_array_1000day.npy')
+	minus_4 = np.load(dir + 'minus_array_2400day.npy')
+	
+	##start appending arrays
+	complete_freq = np.append(freq_1, freq_2, freq_3, freq_4)
+	complete_med = np.append(med_1, med_2, med_3, med_4)
+	complete_plus = np.append(plus_1, plus_2, plus_3, plus_4)
+	complete_minus = np.append(minus_1, minus_2, minus_3, minus_4)
+	
+	##save arrays
+	np.save('freq_array_all', complete_freq)
+	np.save('median_array_all', complete_med)
+	np.save('plus_array_all', complete_plus)
+	np.save('minus_array_all', complete_minus)
     
 ##turn an input of period and velocity max to mass of binary
 ##equation is binary mass equation
