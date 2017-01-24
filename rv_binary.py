@@ -198,9 +198,9 @@ def plot_env(freqarray,median,plus_env,minus_env):
     # print frequency
     ##plot the function
     # plt.semilogx(1/frequency, plus, color ='gray',alpha=.5)
-    # plt.semilogx(1/frequency, median, color ='black')
+    plt.semilogx(1/frequency, median, color ='black')
     # plt.semilogx(1/frequency, minus, color ='gray',alpha=.5)
-    plt.plot(1/frequency,median,alpha=0)
+    # plt.plot(1/frequency,median,alpha=0)
     plt.fill_between(1/frequency,median,plus,facecolor='yellow', alpha=0.5)
     plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
     # plt.set_xscale('log')
@@ -504,11 +504,32 @@ def array_append(dir):
 	minus_3 = np.load(dir + 'minus_array_1000day.npy')
 	minus_4 = np.load(dir + 'minus_array_2400day.npy')
 	
+	##flip the arrays for plotting
+	freq_1_flip = freq_1[::-1]
+	freq_2_flip = freq_2[::-1]
+	freq_3_flip = freq_3[::-1]
+	freq_4_flip = freq_4[::-1]
+	
+	med_1_flip = med_1[::-1]
+	med_2_flip = med_2[::-1]
+	med_3_flip = med_3[::-1]
+	med_4_flip = med_4[::-1]
+	
+	plus_1_flip = plus_1[::-1]
+	plus_2_flip = plus_2[::-1]
+	plus_3_flip = plus_3[::-1]
+	plus_4_flip = plus_4[::-1]
+	
+	minus_1_flip = minus_1[::-1]
+	minus_2_flip = minus_2[::-1]
+	minus_3_flip = minus_3[::-1]
+	minus_4_flip = minus_4[::-1]	
+	
 	##start appending arrays
-	complete_freq = np.concatenate(freq_1, freq_2, freq_3, freq_4)
-	complete_med = np.concatenate(med_1, med_2, med_3, med_4)
-	complete_plus = np.concatenate(plus_1, plus_2, plus_3, plus_4)
-	complete_minus = np.concatenate(minus_1, minus_2, minus_3, minus_4)
+	complete_freq = np.append(freq_1_flip, [freq_2_flip, freq_3_flip, freq_4_flip])
+	complete_med = np.append(med_1_flip, [med_2_flip, med_3_flip, med_4_flip])
+	complete_plus = np.append(plus_1_flip, [plus_2_flip, plus_3_flip, plus_4_flip])
+	complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip, minus_4_flip])
 	
 	##save arrays
 	np.save('freq_array_all', complete_freq)
