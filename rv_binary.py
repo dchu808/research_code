@@ -240,7 +240,7 @@ def plot_env_2(freqarray_1,median_1,plus_env_1,minus_env_1,freqarray_2,median_2,
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
-    #plt.xlim(0,30)
+    plt.xlim(0,2400)
     plt.show()    
 
 def fold_curve(freqarray,median,resid_file):
