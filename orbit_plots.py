@@ -7,7 +7,7 @@ from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
 #rc('font',**{'family':'serif','serif':['Palatino']})
-rc('text', usetex=True)
+# rc('text', usetex=True)
 
 ##first plot - compare 2 points files with 1 orbit model
 ##DOES NOT USE ORBIT ENVELOPES RIGHT NOW
@@ -218,19 +218,21 @@ def make_rv_plots(stars,dirs):
         dir = dirs[s]
         daterv, rv, rverr = get_rv_data(star,dir)
     plt.figure()
+    plt.subplots_adjust(hspace=0.001) ##this creates minimal separation between model and residual plot
     ##rv model
-    plt.subplot(121)
+    ax1 = plt.subplot(211) ##model plot on top
     # plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
     plt.plot(date, vz, color = colors[0])
     plt.scatter(daterv, rv, color = colors[0])
     plt.errorbar(daterv, rv, rverr, np.zeros(len(daterv)), color = colors[0], linestyle = 'None')
+    plt.yticks(np.arange(-2000.,5000.,1000.)) ##this is customized for star, see what works best
     plt.xlabel('Date (years)')
     plt.ylabel('RV (km/sec)')
     plt.xlim([1995, 2020])
 
     ##residual
-    plt.subplot(122)
-    plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
+    ax2 = plt.subplot(212, sharex=ax1)
+    # plt.subplots_adjust(wspace=0.25, right = 0.9, left = 0.1, top = 0.95, bottom = 0.1)
     plt.axhline(color=colors[0])
     idx_2 = np.zeros(len(rv), dtype = int)
     for i in range(len(rv)):
@@ -238,9 +240,15 @@ def make_rv_plots(stars,dirs):
         idx_2[i] = minimum_2
     plt.scatter(daterv, rv - vz[idx_2], color = colors[0])
     plt.errorbar(daterv, rv - vz[idx_2], rverr, np.zeros(len(daterv)), color = colors[0], linestyle = 'None')
+    plt.yticks(np.arange(-100.,200.,50.)) ##this is customized for star, see what works best
     plt.xlabel('Date (years)')
-    plt.ylabel('Dec Residual (arcsec)')
-    plt.xlim([1995, 2020])
+    plt.ylabel('Residual (km/s)')
+    plt.xlim([1995, 2018])
+
+    xticklabels = ax1.get_xticklabels()
+    plt.setp(xticklabels, visible=False)
+
+    plt.show()
     
 
         
