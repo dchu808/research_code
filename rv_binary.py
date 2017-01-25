@@ -243,7 +243,7 @@ def plot_env_2(freqarray_1,median_1,plus_env_1,minus_env_1,freqarray_2,median_2,
     plt.xlim(0,2400)
     plt.show()    
 
-def fold_curve(freqarray,median,resid_file):
+def fold_curve(freqarray,median,resid_file,plots=True):
     ##plot the rv to a folded period
     frequency = np.load(freqarray)
     median = np.load(median)
@@ -271,10 +271,10 @@ def fold_curve(freqarray,median,resid_file):
             peak_freq = np.append(peak_freq,freq_output)
             peak_med = np.append(peak_med,median[i]) ##peak power values
 
-    print peak_ind
+    # print peak_ind
     # print peak_freq
-    print 1/peak_freq
-    print peak_med
+    # print 1/peak_freq
+    # print peak_med
     # print 1/best_freq
     # print best_freq
 
@@ -285,26 +285,29 @@ def fold_curve(freqarray,median,resid_file):
     freqSort = peak_freq[sid]
     print 1/freqSort
 
-    t_fit = np.linspace(0,1)
-    ##read in residual rv file to plot
-    data = np.genfromtxt(resid_file)
-    mjd = data[:,0]
-    resid = data[:,1]
-    rverr = data[:,2]
-    # print mjd
-    ##plot the best fit frequency model
-    y_fit = LombScargle(mjd,resid,rverr).model(t_fit/best_freq, best_freq)
+    ##below is to make the folded rv curve plots
+    if plots == True:
+        t_fit = np.linspace(0,1)
+        ##read in residual rv file to plot
+        data = np.genfromtxt(resid_file)
+        mjd = data[:,0]
+        resid = data[:,1]
+        rverr = data[:,2]
 
-    ##phase the data
-    phase = (mjd * best_freq) % 1    
+        ##make folded rv curves
+        ##for each peak frequency
+        for i in range(len(medianSort)):
+            y_fit = LombScargle(mjd,resid,rverr).model(t_fit/freqSort[i], freqSort[i])
+            ##phase the data
+            phase = (mjd * freqSort[i]) % 1    
 
-    plt.figure()
-    plt.errorbar(phase,resid,rverr,fmt='o',color='black')
-    plt.plot(t_fit,y_fit,color='black')
-    plt.title('Period in days={0:.3f}'.format(1/best_freq))
-    plt.xlabel('Phase')
-    plt.ylabel('Residual (km/s)')
-    plt.show()
+            plt.figure()
+            plt.errorbar(phase,resid,rverr,fmt='o',color='black')
+            plt.plot(t_fit,y_fit,color='black')
+            plt.title('Period in days={0:.3f}'.format(1/freqSort[i]))
+            plt.xlabel('Phase')
+            plt.ylabel('Residual (km/s)')
+            plt.show()
     
 def fit_params(resid_file,freq):
     ##find the amplitude and phase shift values for fitting phased residual curve
