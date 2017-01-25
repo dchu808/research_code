@@ -250,9 +250,41 @@ def fold_curve(freqarray,median,resid_file):
     ##look for the highest value
     best_freq_ind = np.argmax(median)
     best_freq = frequency[best_freq_ind]
-    print 1/best_freq
-    print best_freq
-    
+
+    ##perform a cutoff - arbitrary at the moment
+    # median_cut = np.where(median > 0.5) ##arbitrary, hard coded cut-off right now
+    # print median_cut[0]
+    peak_freq = np.zeros(0)
+    peak_ind = np.zeros(0)
+    peak_med = np.zeros(0)
+    for i in range(1,len(median)-1):
+        if median[i] <= 0.5: ##arbitrary, hard coded cut-off right now
+            continue
+        ##check to see if this frequency is a local max
+        if median[i] <= median[i-1]:
+            continue
+            
+        if median[i] > median[i+1]:
+            freq_output = frequency[i] ##peak frequencies
+            ind = i
+            peak_ind = np.append(peak_ind,ind) ##peak indices
+            peak_freq = np.append(peak_freq,freq_output)
+            peak_med = np.append(peak_med,median[i]) ##peak power values
+
+    print peak_ind
+    # print peak_freq
+    print 1/peak_freq
+    print peak_med
+    # print 1/best_freq
+    # print best_freq
+
+    ##sorting through the peak frequencies
+    sid = (peak_med.argsort())[::-1]
+    medianSort = peak_med[sid]
+    print medianSort
+    freqSort = peak_freq[sid]
+    print 1/freqSort
+
     t_fit = np.linspace(0,1)
     ##read in residual rv file to plot
     data = np.genfromtxt(resid_file)
@@ -484,58 +516,58 @@ def lombscargle(mjd,resid,rverr,min_freq,max_freq):
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
 def array_append(dir):
-	freq_1 = np.load(dir + 'freq_array.npy')
-	freq_2 = np.load(dir + 'freq_array_100day.npy')
-	freq_3 = np.load(dir + 'freq_array_1000day.npy')
-	freq_4 = np.load(dir + 'freq_array_2400day.npy')
-	
-	med_1 = np.load(dir + 'median_array.npy')
-	med_2 = np.load(dir + 'median_array_100day.npy')
-	med_3 = np.load(dir + 'median_array_1000day.npy')
-	med_4 = np.load(dir + 'median_array_2400day.npy')
-	
-	plus_1 = np.load(dir + 'plus_array.npy')
-	plus_2 = np.load(dir + 'plus_array_100day.npy')
-	plus_3 = np.load(dir + 'plus_array_1000day.npy')
-	plus_4 = np.load(dir + 'plus_array_2400day.npy')
-	
-	minus_1 = np.load(dir + 'minus_array.npy')
-	minus_2 = np.load(dir + 'minus_array_100day.npy')
-	minus_3 = np.load(dir + 'minus_array_1000day.npy')
-	minus_4 = np.load(dir + 'minus_array_2400day.npy')
-	
-	##flip the arrays for plotting
-	freq_1_flip = freq_1[::-1]
-	freq_2_flip = freq_2[::-1]
-	freq_3_flip = freq_3[::-1]
-	freq_4_flip = freq_4[::-1]
-	
-	med_1_flip = med_1[::-1]
-	med_2_flip = med_2[::-1]
-	med_3_flip = med_3[::-1]
-	med_4_flip = med_4[::-1]
-	
-	plus_1_flip = plus_1[::-1]
-	plus_2_flip = plus_2[::-1]
-	plus_3_flip = plus_3[::-1]
-	plus_4_flip = plus_4[::-1]
-	
-	minus_1_flip = minus_1[::-1]
-	minus_2_flip = minus_2[::-1]
-	minus_3_flip = minus_3[::-1]
-	minus_4_flip = minus_4[::-1]	
-	
-	##start appending arrays
-	complete_freq = np.append(freq_1_flip, [freq_2_flip, freq_3_flip, freq_4_flip])
-	complete_med = np.append(med_1_flip, [med_2_flip, med_3_flip, med_4_flip])
-	complete_plus = np.append(plus_1_flip, [plus_2_flip, plus_3_flip, plus_4_flip])
-	complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip, minus_4_flip])
-	
-	##save arrays
-	np.save('freq_array_all', complete_freq)
-	np.save('median_array_all', complete_med)
-	np.save('plus_array_all', complete_plus)
-	np.save('minus_array_all', complete_minus)
+    freq_1 = np.load(dir + 'freq_array.npy')
+    freq_2 = np.load(dir + 'freq_array_100day.npy')
+    freq_3 = np.load(dir + 'freq_array_1000day.npy')
+    freq_4 = np.load(dir + 'freq_array_2400day.npy')
+    
+    med_1 = np.load(dir + 'median_array.npy')
+    med_2 = np.load(dir + 'median_array_100day.npy')
+    med_3 = np.load(dir + 'median_array_1000day.npy')
+    med_4 = np.load(dir + 'median_array_2400day.npy')
+    
+    plus_1 = np.load(dir + 'plus_array.npy')
+    plus_2 = np.load(dir + 'plus_array_100day.npy')
+    plus_3 = np.load(dir + 'plus_array_1000day.npy')
+    plus_4 = np.load(dir + 'plus_array_2400day.npy')
+    
+    minus_1 = np.load(dir + 'minus_array.npy')
+    minus_2 = np.load(dir + 'minus_array_100day.npy')
+    minus_3 = np.load(dir + 'minus_array_1000day.npy')
+    minus_4 = np.load(dir + 'minus_array_2400day.npy')
+    
+    ##flip the arrays for plotting
+    freq_1_flip = freq_1[::-1]
+    freq_2_flip = freq_2[::-1]
+    freq_3_flip = freq_3[::-1]
+    freq_4_flip = freq_4[::-1]
+    
+    med_1_flip = med_1[::-1]
+    med_2_flip = med_2[::-1]
+    med_3_flip = med_3[::-1]
+    med_4_flip = med_4[::-1]
+    
+    plus_1_flip = plus_1[::-1]
+    plus_2_flip = plus_2[::-1]
+    plus_3_flip = plus_3[::-1]
+    plus_4_flip = plus_4[::-1]
+    
+    minus_1_flip = minus_1[::-1]
+    minus_2_flip = minus_2[::-1]
+    minus_3_flip = minus_3[::-1]
+    minus_4_flip = minus_4[::-1]    
+    
+    ##start appending arrays
+    complete_freq = np.append(freq_1_flip, [freq_2_flip, freq_3_flip, freq_4_flip])
+    complete_med = np.append(med_1_flip, [med_2_flip, med_3_flip, med_4_flip])
+    complete_plus = np.append(plus_1_flip, [plus_2_flip, plus_3_flip, plus_4_flip])
+    complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip, minus_4_flip])
+    
+    ##save arrays
+    np.save('freq_array_all', complete_freq)
+    np.save('median_array_all', complete_med)
+    np.save('plus_array_all', complete_plus)
+    np.save('minus_array_all', complete_minus)
     
 ##turn an input of period and velocity max to mass of binary
 ##equation is binary mass equation
