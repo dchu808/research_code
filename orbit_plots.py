@@ -206,7 +206,7 @@ def make_plots(stars,dirs,include_rv=True):
             plt.xlim([1995, 2020])
 
 ##just the RV plots            
-def make_rv_plots(stars,dirs):
+def make_rv_plots(stars,dirs,envelope=False):
     date, x, y, z, vx, vy = get_astr_model(stars[0],dirs[0])
     vz = get_rv_model(stars[0],dirs[0])
     # daterv, rv, rverr = get_rv_data(star,dir)
@@ -217,6 +217,16 @@ def make_rv_plots(stars,dirs):
         star = stars[s]
         dir = dirs[s]
         daterv, rv, rverr = get_rv_data(star,dir)
+    if envelope == True:
+        env_file = asciidata.open(dirs[0]+'orbit_range_S0-38_97may_AOadderr1.7_constholoerr7.txt')
+        ##for now manually put in envelope file
+        date_env = env_file[0].tonumpy()
+        rv_env = env_file[3].tonumpy()
+        idx_1 = np.zeros(len(date_env), dtype = int)
+        for i in range(len(date_env)):
+            minimum_1 = (np.abs(date-date_env[i])).argmin()
+            idx_1[i] = minimum_1
+        
     plt.figure()
     plt.subplots_adjust(hspace=0.001) ##this creates minimal separation between model and residual plot
     ##rv model
@@ -225,10 +235,14 @@ def make_rv_plots(stars,dirs):
     plt.plot(date, vz, color = colors[0])
     plt.scatter(daterv, rv, color = colors[0])
     plt.errorbar(daterv, rv, rverr, np.zeros(len(daterv)), color = colors[0], linestyle = 'None')
+    if envelope == True:
+        plt.plot(date_env, vz[idx_1] + rv_env, color = 'black', linestyle='--')
+        plt.plot(date_env, vz[idx_1] - rv_env, color = 'black', linestyle='--')
     plt.yticks(np.arange(-2000.,5000.,1000.)) ##this is customized for star, see what works best
     plt.xlabel('Date (years)')
     plt.ylabel('RV (km/sec)')
     plt.xlim([1995, 2020])
+    plt.ylim([-3000,5000]) ##this is customized for star, see what works best
 
     ##residual
     ax2 = plt.subplot(212, sharex=ax1)
@@ -240,10 +254,14 @@ def make_rv_plots(stars,dirs):
         idx_2[i] = minimum_2
     plt.scatter(daterv, rv - vz[idx_2], color = colors[0])
     plt.errorbar(daterv, rv - vz[idx_2], rverr, np.zeros(len(daterv)), color = colors[0], linestyle = 'None')
+    if envelope == True:
+        plt.plot(date_env, rv_env, color = 'black', linestyle='--')
+        plt.plot(date_env, -1*rv_env, color = 'black', linestyle='--')        
     plt.yticks(np.arange(-100.,200.,50.)) ##this is customized for star, see what works best
     plt.xlabel('Date (years)')
     plt.ylabel('Residual (km/s)')
     plt.xlim([1995, 2018])
+    plt.ylim([-150,200]) ##this is customized for star, see what works best
 
     xticklabels = ax1.get_xticklabels()
     plt.setp(xticklabels, visible=False)
