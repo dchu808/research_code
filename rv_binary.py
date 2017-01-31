@@ -519,24 +519,48 @@ def lombscargle(mjd,resid,rverr,min_freq,max_freq):
 
 ##develop sensativity analysis
 ##start with a non-periodic signal
-def sens_analysis(rv_file):
+def sens_analysis(rv_file,min_freq,max_freq):
     rv_table = asciidata.open(rv_file)
     #read in RV data
     daterv = rv_table[0].tonumpy()
     # rv = rv_table[1].tonumpy()
     rverr = rv_table[2].tonumpy()
     mjdrv = rv_table[3].tonumpy()
-    ##generate a fake residual RV curve, pick from distribution based on rv error
-    fake_resid = np.zeros(len(rverr))
-    for i in range(len(fake_resid)):
-        ##Gaussian centered at 0, with sigma being rv error
-        fake_resid[i] = np.random.normal(0,rverr[i])
-    ##plot this fake residual curve, as a test
-    plt.figure()
-    plt.scatter(daterv, fake_resid, color = 'black')
-    plt.errorbar(daterv, fake_resid, rverr, np.zeros(len(daterv)), color='black' linestyle='None')
-    plt.show()
-    
+    freq_array = np.linspace(min_freq,max_freq,10000)
+
+    ##want to run this sensativity n times
+    n = 10 ##set this manually
+    big_power_array = np.zeros((n,len(freq_array)))
+    for k in tqdm(range(n)):
+        
+        ##generate a fake residual RV curve, pick from distribution based on rv error
+        fake_resid = np.zeros(len(rverr))
+        for i in range(len(fake_resid)):
+            ##Gaussian centered at 0, with sigma being rv error
+            # fake_resid[i] = np.random.normal(0,rverr[i])
+            ##in case the requirement needs to be that the model is within error bar of point
+            j = np.random.normal(0,rverr[i])
+            if np.abs(j) <= np.abs(rverr[i]):
+                fake_resid[i] = j
+        ##plot this fake residual curve, as a test
+        # plt.figure()
+        # plt.axhline(color='black')
+        # plt.scatter(daterv, fake_resid, color = 'black')
+        # plt.errorbar(daterv, fake_resid, rverr, np.zeros(len(daterv)), color='black', linestyle='None')
+        # plt.show()
+        ##now run the fake residual curve through a lomb scargle
+        frequency = np.linspace(min_freq,max_freq,10000)
+        power = lombscargle(mjdrv,fake_resid,rverr,min_freq,max_freq)
+        big_power_array[k] = power
+        
+        ##plot lomb_scargle as a test
+        # plt.figure()
+        # plt.semilogx(1./frequency, power, color='black')
+        # plt.xlabel('Period (Days)')
+        # plt.ylabel('Power')
+        # plt.show()
+    np.save('power_array',big_power_array)
+    np.save('freq_array',freq_array)
 
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
