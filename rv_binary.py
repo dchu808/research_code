@@ -616,25 +616,25 @@ def sens_analysis(rv_file,min_freq,max_freq):
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
 def array_append(dir):
-    freq_1 = np.load(dir + 'freq_array.npy')
-    freq_2 = np.load(dir + 'freq_array_100day.npy')
-    freq_3 = np.load(dir + 'freq_array_1000day.npy')
-    freq_4 = np.load(dir + 'freq_array_2400day.npy')
+    freq_1 = np.load(dir + 'freq_array_sa.npy')
+    freq_2 = np.load(dir + 'freq_array_sa_100day.npy')
+    freq_3 = np.load(dir + 'freq_array_sa_1000day.npy')
+    freq_4 = np.load(dir + 'freq_array_sa_2400day.npy')
     
-    med_1 = np.load(dir + 'median_array.npy')
-    med_2 = np.load(dir + 'median_array_100day.npy')
-    med_3 = np.load(dir + 'median_array_1000day.npy')
-    med_4 = np.load(dir + 'median_array_2400day.npy')
+    med_1 = np.load(dir + 'median_array_sa.npy')
+    med_2 = np.load(dir + 'median_array_sa_100day.npy')
+    med_3 = np.load(dir + 'median_array_sa_1000day.npy')
+    med_4 = np.load(dir + 'median_array_sa_2400day.npy')
     
-    plus_1 = np.load(dir + 'plus_array.npy')
-    plus_2 = np.load(dir + 'plus_array_100day.npy')
-    plus_3 = np.load(dir + 'plus_array_1000day.npy')
-    plus_4 = np.load(dir + 'plus_array_2400day.npy')
+    plus_1 = np.load(dir + 'plus_array_sa.npy')
+    plus_2 = np.load(dir + 'plus_array_sa_100day.npy')
+    plus_3 = np.load(dir + 'plus_array_sa_1000day.npy')
+    plus_4 = np.load(dir + 'plus_array_sa_2400day.npy')
     
-    minus_1 = np.load(dir + 'minus_array.npy')
-    minus_2 = np.load(dir + 'minus_array_100day.npy')
-    minus_3 = np.load(dir + 'minus_array_1000day.npy')
-    minus_4 = np.load(dir + 'minus_array_2400day.npy')
+    minus_1 = np.load(dir + 'minus_array_sa.npy')
+    minus_2 = np.load(dir + 'minus_array_sa_100day.npy')
+    minus_3 = np.load(dir + 'minus_array_sa_1000day.npy')
+    minus_4 = np.load(dir + 'minus_array_sa_2400day.npy')
     
     ##flip the arrays for plotting
     freq_1_flip = freq_1[::-1]
@@ -664,10 +664,10 @@ def array_append(dir):
     complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip, minus_4_flip])
     
     ##save arrays
-    np.save('freq_array_all', complete_freq)
-    np.save('median_array_all', complete_med)
-    np.save('plus_array_all', complete_plus)
-    np.save('minus_array_all', complete_minus)
+    np.save('freq_array_sa_all', complete_freq)
+    np.save('median_array_sa_all', complete_med)
+    np.save('plus_array_sa_all', complete_plus)
+    np.save('minus_array_sa_all', complete_minus)
     
 ##turn an input of period and velocity max to mass of binary
 ##equation is binary mass equation
