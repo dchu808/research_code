@@ -187,6 +187,57 @@ def envelope_cdf(freqarray,powerarray,weights_array):
     np.save('median_array', median_array)
     np.save('minus_array', minus_array)
     np.save('plus_array', plus_array)
+
+##envelope cdf but no weights. For sensativity analysis
+def envelope_cdf_no_weights(freqarray,powerarray):
+    ##calculate cdf
+    power_array = np.load(powerarray)
+    freq_array = np.load(freqarray)
+
+    ##create an array of median power values for each frequency
+    median_array = np.zeros(len(freq_array))
+    
+    ##do same for +/- 1 sigma
+    minus_array = np.zeros(len(freq_array))
+    plus_array = np.zeros(len(freq_array))
+    
+    ##go through the power file one line at a time to make cdfs
+    ##Each value in one row has a weight value attached to it as well
+    for j in tqdm(range(len(freq_array))):
+        ##each column is the power of a particular frequency. Read through columns
+        col = power_array[:,j]
+        ##want to take cdf of this column
+        ##start take by making a histogram, weighting it by weights
+        power,bin_edges = np.histogram(col,bins=10000,normed=False)
+        ##start cdf process, normalize
+        power_norm = np.array(power, dtype=float) / power.sum()
+        
+        # sid = (power_norm.argsort())[::-1] # indices for a reverse sort
+        sid = (power_norm.argsort())
+        powerSort = power_norm[sid]
+        ##sort the original power array - should be the same as powerSort, but not normalized
+        # powerSort_not_norm = power[sid]
+        
+        ##cdf
+        cdf = np.cumsum(powerSort)
+        
+        ##Determine points for median, +/- 1 sigma
+        idxm = (np.where(cdf > 0.5))[0] #median
+        idx1m = (np.where(cdf > 0.3173))[0] #1 sigma minus
+        idx1p = (np.where(cdf > 0.6827))[0] #1 sigma plus
+        
+        median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
+        level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
+        level1p = bin_edges[idx1p[0]] + 0.5*(bin_edges[1]-bin_edges[0])
+
+        ##write these values to arrays
+        median_array[j] = median
+        minus_array[j] = level1m
+        plus_array[j] = level1p
+    
+    np.save('median_array', median_array)
+    np.save('minus_array', minus_array)
+    np.save('plus_array', plus_array)
     
 def plot_env(freqarray,median,plus_env,minus_env):
     ##make a plot of the Lomb Scargle, plotting median power, +/- 1 sigma
