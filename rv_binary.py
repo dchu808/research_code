@@ -517,6 +517,27 @@ def lombscargle(mjd,resid,rverr,min_freq,max_freq):
     power = LombScargle(mjd,resid,rverr).power(frequency,method='fast')
     return power
 
+##develop sensativity analysis
+##start with a non-periodic signal
+def sens_analysis(rv_file):
+    rv_table = asciidata.open(rv_file)
+    #read in RV data
+    daterv = rv_table[0].tonumpy()
+    # rv = rv_table[1].tonumpy()
+    rverr = rv_table[2].tonumpy()
+    mjdrv = rv_table[3].tonumpy()
+    ##generate a fake residual RV curve, pick from distribution based on rv error
+    fake_resid = np.zeros(len(rverr))
+    for i in range(len(fake_resid)):
+        ##Gaussian centered at 0, with sigma being rv error
+        fake_resid[i] = np.random.normal(0,rverr[i])
+    ##plot this fake residual curve, as a test
+    plt.figure()
+    plt.scatter(daterv, fake_resid, color = 'black')
+    plt.errorbar(daterv, fake_resid, rverr, np.zeros(len(daterv)), color='black' linestyle='None')
+    plt.show()
+    
+
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
 def array_append(dir):
@@ -638,3 +659,38 @@ def mass_period_plot(file_path,mass_S02):
     plt.xlabel('Period (Days)')
     plt.ylabel('Companion Mass (Solar Masses)')
     plt.show()
+
+##if given a period, calculate the vmax, given a companion mass
+##gives up a limit for excluding periods with high power from aliasing
+def vmax_find(m_test,mass_s02,period):
+    G = const.G
+    ##mass of S0-2 comes from input
+    ms02 = mass_s02 * u.Msun
+    
+    ##period in days
+    p = period * u.d
+    
+    ##test value for m companion
+    m = m_test * u.Msun
+
+    ##binary mass equation, solving for vmax
+    # z = (((m**3)/((m+ms02)**2))*((2. * np.pi)/p))
+    z = (m**3./(m+ms02)**2.)*(2*np.pi * G / p)
+    # print z
+    x = z**(1./3.)
+    # print x
+    ##show this value in km/s
+    x_kms = x.to(u.km/u.s)
+    return x_kms.value
+    # print x_kms
+    # print x_kms.value
+
+##uses the function vmax_find, but for array of periods (1/frequencies)
+def vmax_array(m_test,mass_s02,freq_array):
+    freq = np.load(freq_array)
+    periods = 1./freq
+    vmax_array = np.zeros(len(periods))
+    for i in tqdm(range(len(periods))):
+        vmax_array[i] = vmax_find(m_test,mass_s02,periods[i])
+    print vmax_array[:30]
+        
