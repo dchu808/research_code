@@ -239,14 +239,19 @@ def envelope_cdf_no_weights(freqarray,powerarray):
     np.save('minus_array', minus_array)
     np.save('plus_array', plus_array)
     
-def plot_env(freqarray,median,plus_env,minus_env):
+def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     ##make a plot of the Lomb Scargle, plotting median power, +/- 1 sigma
     frequency = np.load(freqarray)
     median = np.load(median)
     plus = np.load(plus_env)
     minus = np.load(minus_env)
     
-    # print frequency
+    if noise==True:
+        ##manually put in noise files
+        # noise_dir = 
+        noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
+        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_all.npy')
+        
     ##plot the function
     # plt.semilogx(1/frequency, plus, color ='gray',alpha=.5)
     plt.semilogx(1/frequency, median, color ='black')
@@ -254,6 +259,8 @@ def plot_env(freqarray,median,plus_env,minus_env):
     # plt.plot(1/frequency,median,alpha=0)
     plt.fill_between(1/frequency,median,plus,facecolor='yellow', alpha=0.5)
     plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
+    if noise==True:
+        plt.fill_between(1/noise_freq,0.,noise,facecolor='red', alpha=0.5)
     # plt.set_xscale('log')
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
