@@ -246,11 +246,11 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     plus = np.load(plus_env)
     minus = np.load(minus_env)
     
-    if noise==True:
+    # if noise == True:
         ##manually put in noise files
         # noise_dir = 
-        noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
-        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_all.npy')
+        # noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
+        # noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_all.npy')
         
     ##plot the function
     # plt.semilogx(1/frequency, plus, color ='gray',alpha=.5)
@@ -259,7 +259,9 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     # plt.plot(1/frequency,median,alpha=0)
     plt.fill_between(1/frequency,median,plus,facecolor='yellow', alpha=0.5)
     plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
-    if noise==True:
+    if noise == True:
+        noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
+        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_all.npy')
         plt.fill_between(1/noise_freq,0.,noise,facecolor='red', alpha=0.5)
     # plt.set_xscale('log')
     plt.xlabel('Period (Days)')
@@ -371,8 +373,8 @@ def fold_curve(freqarray,median,resid_file,plots=True):
 def fit_params(resid_file,freq):
     ##find the amplitude and phase shift values for fitting phased residual curve
     ##first need to fold the RV data to a particular frequency
-    ##then fit data to A sin(w*t + phi)
-    ##solve for A and phi
+    ##then fit data to S sin(w*t) + C cos(w*t) + const
+	##w = 2*pi/Period
     ##test freq 0.922322232223
     
     ##data from file
@@ -383,6 +385,7 @@ def fit_params(resid_file,freq):
     
     ##given best frequency to phase:
     frequency = freq
+	period = 1/freq
     
     ##phase data to the frequency
     phase = (mjd * frequency) % 1
@@ -595,11 +598,7 @@ def sens_analysis(rv_file,min_freq,max_freq):
         fake_resid = np.zeros(len(rverr))
         for i in range(len(fake_resid)):
             ##Gaussian centered at 0, with sigma being rv error
-            # fake_resid[i] = np.random.normal(0,rverr[i])
-            ##in case the requirement needs to be that the model is within error bar of point
-            j = np.random.normal(0,rverr[i])
-            if np.abs(j) <= np.abs(rverr[i]):
-                fake_resid[i] = j
+            fake_resid[i] = np.random.normal(0,rverr[i])
         ##plot this fake residual curve, as a test
         # plt.figure()
         # plt.axhline(color='black')
