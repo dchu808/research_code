@@ -374,7 +374,7 @@ def fit_params(resid_file,freq):
     ##find the amplitude and phase shift values for fitting phased residual curve
     ##first need to fold the RV data to a particular frequency
     ##then fit data to S sin(w*t) + C cos(w*t) + const
-	##w = 2*pi/Period
+    ##w = 2*pi/Period
     ##test freq 0.922322232223
     
     ##data from file
@@ -385,7 +385,7 @@ def fit_params(resid_file,freq):
     
     ##given best frequency to phase:
     frequency = freq
-	period = 1/freq
+    period = 1/freq
     
     ##phase data to the frequency
     phase = (mjd * frequency) % 1
