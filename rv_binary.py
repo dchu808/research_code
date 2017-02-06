@@ -386,6 +386,8 @@ def fit_params(resid_file,freq):
     ##given best frequency to phase:
     frequency = freq
     period = 1/freq
+    # w = 2.*np.pi/(1./freq)
+    w = 2. * np.pi * freq
     
     ##phase data to the frequency
     phase = (mjd * frequency) % 1
@@ -403,7 +405,7 @@ def fit_params(resid_file,freq):
         
     def variance(t,a,b,const):
         ##sine function + cos function
-        z = a * np.sin(frequency*t) + b * np.cos(requency*t) + const
+        z = a * np.sin(w*t) + b * np.cos(w*t) + const
         return z
         
     def residual((a,p)):
@@ -426,17 +428,19 @@ def fit_params(resid_file,freq):
     # (x1,x2,x3,x4,x5) = leastsq(residual,x0=(10,.01),full_output=True)
     # print x1
     
-    (x1,x2) = curve_fit(variance,phase,resid,p0=(5.,5.),sigma=rverr)
+    (x1,x2) = curve_fit(variance,phase,resid,p0=(10.,10.,-5.),sigma=rverr)
     ##best fit parameters
     # print x1
     print x1[0]
     print x1[1]
     print x1[2]
+    print np.sqrt(x1[0]**2 + x1[1]**2)
     #print x2
     ##want uncertainties from covariance matrix
     ##uncertainty in amplitude
     print np.sqrt(x2.diagonal().item(0))
     print np.sqrt(x2.diagonal().item(1))
+    print x2
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
     ##make model from orbital parameters
