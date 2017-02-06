@@ -685,7 +685,7 @@ def array_append(dir):
 
 ##define the binary mass function
 
-def bm_equation(m_test,p_days,vmax_kms,mass_s02):
+def bm_equation(m_test,p_days,vmax_kms,mass_tot):
     ##define the equation first
     ##period in days, vmax in km/s
     ##sin^3 i is not included in equation now
@@ -693,7 +693,7 @@ def bm_equation(m_test,p_days,vmax_kms,mass_s02):
     
     G = const.G
     ##mass of S0-2 comes from input
-    ms02 = mass_s02 * u.Msun
+    mtot = mass_tot * u.Msun
     
     ##period in days
     p = p_days * u.d
@@ -704,20 +704,20 @@ def bm_equation(m_test,p_days,vmax_kms,mass_s02):
     ##test value for m
     m = m_test * u.Msun
     
-    value = m**3 / (ms02 + m)**2 - p * vmax**3 / (2. * np.pi * G)
+    value = m**3 / (mtot)**2 - p * vmax**3 / (2. * np.pi * G)
     
     ##I want to return this value and minimize it
     ##.value takes out the units
     return np.abs(value.value)
     
-def bm_solve(period,vmaxkms,mass_S02):
+def bm_solve(period,vmaxkms,mass_tot):
     ##sample through a mass array to find companion
     m_array = np.arange(0.1,10.1,.1)
     test_values = np.zeros(len(m_array))
 
     ##loop through mass values to find where the minimum value is for function
     for i in range(len(m_array)):
-        test_values[i] = bm_equation(m_array[i],period,vmaxkms,mass_S02)
+        test_values[i] = bm_equation(m_array[i],period,vmaxkms,mass_tot)
     # print test_values
     min_arg = np.argmin(test_values)
     # print min_arg 
@@ -728,7 +728,7 @@ def bm_solve(period,vmaxkms,mass_S02):
 
 ##make plot of binary mass vs period
 ##requires Vmax vs period file
-def mass_period_plot(file_path,mass_S02):
+def mass_period_plot(file_path,mass_tot):
     ##read in the file
     info = np.genfromtxt(file_path)
     period_array = info[:,0]
@@ -736,22 +736,22 @@ def mass_period_plot(file_path,mass_S02):
     binary_mass_array = np.zeros(len(period_array))
     
     ##feed these array information into the bm_solve function
-    for i in range(len(period_array)):
-        binary_mass_array[i] = bm_solve(period_array[i], vmax_array[i], mass_S02)
+    for i in tqdm(range(len(period_array))):
+        binary_mass_array[i] = bm_solve(period_array[i], vmax_array[i], mass_tot)
     print binary_mass_array
     ##make plot of period vs companion mass
     plt.figure()
     plt.plot(period_array,binary_mass_array)
     plt.xlabel('Period (Days)')
-    plt.ylabel('Companion Mass (Solar Masses)')
+    plt.ylabel('Companion Mass Sin i (Solar Masses)')
     plt.show()
 
 ##if given a period, calculate the vmax, given a companion mass
 ##gives up a limit for excluding periods with high power from aliasing
-def vmax_find(m_test,mass_s02,period):
+def vmax_find(m_test,mass_tot,period):
     G = const.G
-    ##mass of S0-2 comes from input
-    ms02 = mass_s02 * u.Msun
+    ##total mass (S02 + companion) comes from input
+    mtot = mass_tot * u.Msun
     
     ##period in days
     p = period * u.d
@@ -761,7 +761,7 @@ def vmax_find(m_test,mass_s02,period):
 
     ##binary mass equation, solving for vmax
     # z = (((m**3)/((m+ms02)**2))*((2. * np.pi)/p))
-    z = (m**3./(m+ms02)**2.)*(2*np.pi * G / p)
+    z = (m**3./(mtot)**2.)*(2*np.pi * G / p)
     # print z
     x = z**(1./3.)
     # print x
@@ -772,11 +772,11 @@ def vmax_find(m_test,mass_s02,period):
     # print x_kms.value
 
 ##uses the function vmax_find, but for array of periods (1/frequencies)
-def vmax_array(m_test,mass_s02,freq_array):
+def vmax_array(m_test,mass_tot,freq_array):
     freq = np.load(freq_array)
     periods = 1./freq
     vmax_array = np.zeros(len(periods))
     for i in tqdm(range(len(periods))):
-        vmax_array[i] = vmax_find(m_test,mass_s02,periods[i])
+        vmax_array[i] = vmax_find(m_test,mass_tot,periods[i])
     print vmax_array[:30]
         
