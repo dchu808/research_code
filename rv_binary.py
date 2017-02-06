@@ -401,9 +401,9 @@ def fit_params(resid_file,freq):
     #     z = a * np.sin(w*t + p) - v
     #     return z
         
-    def variance(t,a,p):
-        ##sine function, want to find a and p
-        z = a * np.sin(frequency*t + p)
+    def variance(t,a,b,const):
+        ##sine function + cos function
+        z = a * np.sin(frequency*t) + b * np.cos(requency*t) + const
         return z
         
     def residual((a,p)):
@@ -426,11 +426,12 @@ def fit_params(resid_file,freq):
     # (x1,x2,x3,x4,x5) = leastsq(residual,x0=(10,.01),full_output=True)
     # print x1
     
-    (x1,x2) = curve_fit(variance,phase,resid,p0=(2.,0.1),sigma=rverr)
+    (x1,x2) = curve_fit(variance,phase,resid,p0=(5.,5.),sigma=rverr)
     ##best fit parameters
     # print x1
     print x1[0]
     print x1[1]
+    print x1[2]
     #print x2
     ##want uncertainties from covariance matrix
     ##uncertainty in amplitude
