@@ -377,7 +377,7 @@ def CL_vmax(resid_file,freq_array):
     ##then fit data to S sin(w*t) + C cos(w*t) + const
     ##w = 2*pi/Period
     ##test freq 0.922322232223
-    
+    freq_array = np.load(freq_array)
     ##data from file
     data = np.genfromtxt(resid_file)
     mjd = data[:,0]
@@ -386,32 +386,33 @@ def CL_vmax(resid_file,freq_array):
     
     ##given best frequency to phase:
     # frequency = freq
-    period = 1/freq_array
+    period = 1./freq_array
     # w = 2.*np.pi/(1./freq)
     w = 2. * np.pi * freq_array
 
     CL_array = np.zeros(len(freq_array))
     
     for i in tqdm(range(len(freq_array))):
-    ##phase data to the frequency
-        phase = (mjd * freq_array[i]) % 1
+    	##phase data to the frequency
+        # phase = (mjd * freq_array[i]) % 1
         
         def variance(t,a,b,const):
             ##sine function + cos function
-            z = a * np.sin(w*t) + b * np.cos(w*t) + const
+            z = a * np.sin(w[i]*t) + b * np.cos(w[i]*t) + const
             return z
     
-        (x1,x2) = curve_fit(variance,phase,resid,p0=(10.,10.,-5.),sigma=rverr)
+        # (x1,x2) = curve_fit(variance,phase,resid,p0=(0.,0.,0.),sigma=rverr) ##this was a typo
+        (x1,x2) = curve_fit(variance,mjd,resid,p0=(0.,0.,0.),sigma=rverr)
         ##best fit parameters
         # print x1
         A = x1[0]
-        print A
+        # print A
         B = x1[1]
-        print B
+        # print B
         cons = x1[2]
-        print cons
+        # print cons
         vmax = np.sqrt(A**2 + B**2)
-        print vmax
+        # print vmax
         #print x2
         ##want uncertainties from covariance matrix
         ##uncertainty in amplitude
@@ -426,7 +427,7 @@ def CL_vmax(resid_file,freq_array):
         co_a = x2[:2][0][:2]
         co_b = x2[:2][1][:2]
         co_ab = np.vstack((co_a,co_b))
-        print co_ab
+        # print co_ab
         ##start proess to calculate 95% confidence level
         n = 1000 ##select number of trials
         a = np.zeros(n)
@@ -447,7 +448,8 @@ def CL_vmax(resid_file,freq_array):
         # print CL_vmax
         CL_array[i] = CL_vmax[1]
     np.save('conf_lev',CL_array)
-    plt.figure(1/freq,CL_array)
+    plt.figure()
+    plt.plot(1./freq_array,CL_array)
     plt.show()
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
