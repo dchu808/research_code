@@ -222,10 +222,10 @@ def envelope_cdf_no_weights(freqarray,powerarray):
         ##cdf
         cdf = np.cumsum(powerSort)
         
-        ##Determine points for median, +/- 1 sigma
+        ##Determine points for median, +/- 3 sigma
         idxm = (np.where(cdf > 0.5))[0] #median
-        idx1m = (np.where(cdf > 0.3173))[0] #1 sigma minus
-        idx1p = (np.where(cdf > 0.6827))[0] #1 sigma plus
+        idx1m = (np.where(cdf > 0.0027))[0] #3 sigma minus
+        idx1p = (np.where(cdf > 0.9973))[0] #3 sigma plus
         
         median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
         level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
@@ -433,7 +433,7 @@ def CL_vmax(resid_file):
         co_ab = np.vstack((co_a,co_b))
         # print co_ab
         ##start proess to calculate 95% confidence level
-        n = 1000 ##select number of trials
+        n = 20000 ##select number of trials
         a = np.zeros(n)
         b = np.zeros(n)
         vmax_array = np.zeros(n)
@@ -646,49 +646,54 @@ def array_append(dir):
     freq_1 = np.load(dir + 'freq_array_sa.npy')
     freq_2 = np.load(dir + 'freq_array_sa_100day.npy')
     freq_3 = np.load(dir + 'freq_array_sa_1000day.npy')
-    freq_4 = np.load(dir + 'freq_array_sa_2400day.npy')
+    # freq_4 = np.load(dir + 'freq_array_sa_2400day.npy')
     
     med_1 = np.load(dir + 'median_array_sa.npy')
     med_2 = np.load(dir + 'median_array_sa_100day.npy')
     med_3 = np.load(dir + 'median_array_sa_1000day.npy')
-    med_4 = np.load(dir + 'median_array_sa_2400day.npy')
+    # med_4 = np.load(dir + 'median_array_sa_2400day.npy')
     
     plus_1 = np.load(dir + 'plus_array_sa.npy')
     plus_2 = np.load(dir + 'plus_array_sa_100day.npy')
     plus_3 = np.load(dir + 'plus_array_sa_1000day.npy')
-    plus_4 = np.load(dir + 'plus_array_sa_2400day.npy')
+    # plus_4 = np.load(dir + 'plus_array_sa_2400day.npy')
     
     minus_1 = np.load(dir + 'minus_array_sa.npy')
     minus_2 = np.load(dir + 'minus_array_sa_100day.npy')
     minus_3 = np.load(dir + 'minus_array_sa_1000day.npy')
-    minus_4 = np.load(dir + 'minus_array_sa_2400day.npy')
+    # minus_4 = np.load(dir + 'minus_array_sa_2400day.npy')
     
     ##flip the arrays for plotting
     freq_1_flip = freq_1[::-1]
     freq_2_flip = freq_2[::-1]
     freq_3_flip = freq_3[::-1]
-    freq_4_flip = freq_4[::-1]
+    # freq_4_flip = freq_4[::-1]
     
     med_1_flip = med_1[::-1]
     med_2_flip = med_2[::-1]
     med_3_flip = med_3[::-1]
-    med_4_flip = med_4[::-1]
+    # med_4_flip = med_4[::-1]
     
     plus_1_flip = plus_1[::-1]
     plus_2_flip = plus_2[::-1]
     plus_3_flip = plus_3[::-1]
-    plus_4_flip = plus_4[::-1]
+    # plus_4_flip = plus_4[::-1]
     
     minus_1_flip = minus_1[::-1]
     minus_2_flip = minus_2[::-1]
     minus_3_flip = minus_3[::-1]
-    minus_4_flip = minus_4[::-1]    
+    # minus_4_flip = minus_4[::-1]    
     
     ##start appending arrays
-    complete_freq = np.append(freq_1_flip, [freq_2_flip, freq_3_flip, freq_4_flip])
-    complete_med = np.append(med_1_flip, [med_2_flip, med_3_flip, med_4_flip])
-    complete_plus = np.append(plus_1_flip, [plus_2_flip, plus_3_flip, plus_4_flip])
-    complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip, minus_4_flip])
+    # complete_freq = np.append(freq_1_flip, [freq_2_flip, freq_3_flip, freq_4_flip])
+    # complete_med = np.append(med_1_flip, [med_2_flip, med_3_flip, med_4_flip])
+    # complete_plus = np.append(plus_1_flip, [plus_2_flip, plus_3_flip, plus_4_flip])
+    # complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip, minus_4_flip])
+
+    complete_freq = np.append(freq_1_flip, [freq_2_flip, freq_3_flip])
+    complete_med = np.append(med_1_flip, [med_2_flip, med_3_flip])
+    complete_plus = np.append(plus_1_flip, [plus_2_flip, plus_3_flip])
+    complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip])
     
     ##save arrays
     np.save('freq_array_sa_all', complete_freq)
