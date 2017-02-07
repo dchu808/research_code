@@ -611,7 +611,7 @@ def sens_analysis(rv_file,min_freq,max_freq):
     freq_array = np.linspace(min_freq,max_freq,10000)
 
     ##want to run this sensativity n times
-    n = 10000 ##set this manually
+    n = 100000 ##set this manually
     big_power_array = np.zeros((n,len(freq_array)))
     for k in tqdm(range(n)):
         
