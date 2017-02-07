@@ -371,13 +371,15 @@ def fold_curve(freqarray,median,resid_file,plots=True):
             plt.ylabel('Residual (km/s)')
             plt.show()
     
-def CL_vmax(resid_file,freq_array):
+def CL_vmax(resid_file):
     ##find the amplitude and phase shift values for fitting phased residual curve
     ##first need to fold the RV data to a particular frequency
     ##then fit data to S sin(w*t) + C cos(w*t) + const
     ##w = 2*pi/Period
     ##test freq 0.922322232223
-    freq_array = np.load(freq_array)
+    # freq_array = np.load(array) ##in case sample frequencies
+    period_array = np.arange(1.,100.,.1) ##sampling uniform periods
+    # print period_array
     ##data from file
     data = np.genfromtxt(resid_file)
     mjd = data[:,0]
@@ -386,14 +388,16 @@ def CL_vmax(resid_file,freq_array):
     
     ##given best frequency to phase:
     # frequency = freq
-    period = 1./freq_array
+    # period = 1./freq_array
     # w = 2.*np.pi/(1./freq)
-    w = 2. * np.pi * freq_array
+    # w = 2. * np.pi * freq_array ##for frequencies
+    w = 2. * np.pi / period_array ##for periods
 
-    CL_array = np.zeros(len(freq_array))
+    # CL_array = np.zeros(len(freq_array)) ##for frequenices
+    CL_array = np.zeros(len(period_array)) ##for periods
     
-    for i in tqdm(range(len(freq_array))):
-    	##phase data to the frequency
+    for i in tqdm(range(len(period_array))):
+        ##phase data to the frequency
         # phase = (mjd * freq_array[i]) % 1
         
         def variance(t,a,b,const):
@@ -401,7 +405,7 @@ def CL_vmax(resid_file,freq_array):
             z = a * np.sin(w[i]*t) + b * np.cos(w[i]*t) + const
             return z
     
-        # (x1,x2) = curve_fit(variance,phase,resid,p0=(0.,0.,0.),sigma=rverr) ##this was a typo
+        # (x1,x2) = curve_fit(variance,phase,resid,p0=(0.,0.,0.),sigma=rverr) ##this was a typo, should not use phase
         (x1,x2) = curve_fit(variance,mjd,resid,p0=(0.,0.,0.),sigma=rverr)
         ##best fit parameters
         # print x1
@@ -444,12 +448,14 @@ def CL_vmax(resid_file,freq_array):
         vmax_n, vmax_minmax, vmax_mean, vmax_var, vmax_skew, vmax_kurt = scipy.stats.describe(vmax_array)
         vmax_std = np.sqrt(vmax_var)
         ##get confidence level
-        CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
+        # CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
+        CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std)
         # print CL_vmax
         CL_array[i] = CL_vmax[1]
     np.save('conf_lev',CL_array)
     plt.figure()
-    plt.plot(1./freq_array,CL_array)
+    # plt.plot(1./freq_array,CL_array)
+    plt.plot(period_array,CL_array)
     plt.show()
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
