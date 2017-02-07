@@ -371,7 +371,7 @@ def fold_curve(freqarray,median,resid_file,plots=True):
             plt.ylabel('Residual (km/s)')
             plt.show()
     
-def fit_params(resid_file,freq):
+def CL_vmax(resid_file,freq_array):
     ##find the amplitude and phase shift values for fitting phased residual curve
     ##first need to fold the RV data to a particular frequency
     ##then fit data to S sin(w*t) + C cos(w*t) + const
@@ -385,87 +385,70 @@ def fit_params(resid_file,freq):
     rverr = data[:,2]
     
     ##given best frequency to phase:
-    frequency = freq
-    period = 1/freq
+    # frequency = freq
+    period = 1/freq_array
     # w = 2.*np.pi/(1./freq)
-    w = 2. * np.pi * freq
+    w = 2. * np.pi * freq_array
+
+    CL_array = np.zeros(len(freq_array))
     
+    for i in tqdm(range(len(freq_array))):
     ##phase data to the frequency
-    phase = (mjd * frequency) % 1
-    
-    ##sample around each data point with Gaussian
-    # def sample_data(point,err):
-        # z = np.random.normal(point,err)
-        # return z
+        phase = (mjd * freq_array[i]) % 1
         
-    ##defining the sine function to fit to
-    # def variance((a,p),w,t,v):
-    #     ##sine function, want to find a and p
-    #     z = a * np.sin(w*t + p) - v
-    #     return z
-        
-    def variance(t,a,b,const):
-        ##sine function + cos function
-        z = a * np.sin(w*t) + b * np.cos(w*t) + const
-        return z
-        
-    def residual((a,p)):
-        res = np.array(len(resid))
-        for i in range(resid.size):
-            ##inserting peak frequency, phased time data, residual velocity
-            re = variance((a,p),frequency,phase[i],resid[i])
-            res[i] = re
-        return res
+        def variance(t,a,b,const):
+            ##sine function + cos function
+            z = a * np.sin(w*t) + b * np.cos(w*t) + const
+            return z
     
-    ##run least square fit
-    # (x1,x2,x3,x4,x5) = leastsq(residual,x0=(10,.01),full_output=True)
-    # print x1
-    
-    (x1,x2) = curve_fit(variance,phase,resid,p0=(10.,10.,-5.),sigma=rverr)
-    ##best fit parameters
-    # print x1
-    A = x1[0]
-    print A
-    B = x1[1]
-    print B
-    cons = x1[2]
-    print cons
-    vmax = np.sqrt(A**2 + B**2)
-    print vmax
-    #print x2
-    ##want uncertainties from covariance matrix
-    ##uncertainty in amplitude
-    A_sig =  np.sqrt(x2.diagonal().item(0))
-    print A_sig
-    B_sig =  np.sqrt(x2.diagonal().item(1))
-    print B_sig
-    ##covariance matrix
-    cov = x2
-    # print cov
-    # print x2[0]
-    co_a = x2[:2][0][:2]
-    co_b = x2[:2][1][:2]
-    co_ab = np.vstack((co_a,co_b))
-    print co_ab
-    ##start proess to calculate 95% confidence level
-    n = 1000 ##select number of trials
-    a = np.zeros(n)
-    b = np.zeros(n)
-    vmax_array = np.zeros(n)
-    ##draw from a multivariate gaussian
-    ##uses the fit parameters as mean, then uses covariance matrix
-    ##to find A and B, which will then be used to find Vmax
-    for j in range(n):
-        sample = np.random.multivariate_normal((A,B),co_ab)
-        a[j] = sample[0]
-        b[j] = sample[1]
-    vmax_array = np.sqrt(a**2 + b**2)
-    vmax_n, vmax_minmax, vmax_mean, vmax_var, vmax_skew, vmax_kurt = scipy.stats.describe(vmax_array)
-    vmax_std = np.sqrt(vmax_var)
-    ##get confidence level
-    CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
-    # print CL_vmax
-    print CL_vmax[1]
+        (x1,x2) = curve_fit(variance,phase,resid,p0=(10.,10.,-5.),sigma=rverr)
+        ##best fit parameters
+        # print x1
+        A = x1[0]
+        print A
+        B = x1[1]
+        print B
+        cons = x1[2]
+        print cons
+        vmax = np.sqrt(A**2 + B**2)
+        print vmax
+        #print x2
+        ##want uncertainties from covariance matrix
+        ##uncertainty in amplitude
+        A_sig =  np.sqrt(x2.diagonal().item(0))
+        # print A_sig
+        B_sig =  np.sqrt(x2.diagonal().item(1))
+        # print B_sig
+        ##covariance matrix
+        cov = x2
+        # print cov
+        # print x2[0]
+        co_a = x2[:2][0][:2]
+        co_b = x2[:2][1][:2]
+        co_ab = np.vstack((co_a,co_b))
+        print co_ab
+        ##start proess to calculate 95% confidence level
+        n = 1000 ##select number of trials
+        a = np.zeros(n)
+        b = np.zeros(n)
+        vmax_array = np.zeros(n)
+        ##draw from a multivariate gaussian
+        ##uses the fit parameters as mean, then uses covariance matrix
+        ##to find A and B, which will then be used to find Vmax
+        for j in range(n):
+            sample = np.random.multivariate_normal((A,B),co_ab)
+            a[j] = sample[0]
+            b[j] = sample[1]
+        vmax_array = np.sqrt(a**2 + b**2)
+        vmax_n, vmax_minmax, vmax_mean, vmax_var, vmax_skew, vmax_kurt = scipy.stats.describe(vmax_array)
+        vmax_std = np.sqrt(vmax_var)
+        ##get confidence level
+        CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
+        # print CL_vmax
+        CL_array[i] = CL_vmax[1]
+    np.save('conf_lev',CL_array)
+    plt.figure(1/freq,CL_array)
+    plt.show()
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
     ##make model from orbital parameters
