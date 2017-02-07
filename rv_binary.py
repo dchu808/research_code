@@ -3,6 +3,7 @@
 import numpy as np
 import scipy
 from scipy.optimize import leastsq,curve_fit
+from scipy import stats
 import pylab
 import matplotlib.pyplot as plt
 import asciidata
@@ -416,14 +417,6 @@ def fit_params(resid_file,freq):
             res[i] = re
         return res
     
-        
-    ##generating a mock residual curve
-    # mock_resid = np.zeros(len(resid))
-    # for i in range(len(resid)):
-        # mock_resid[i] = sample_data(resid[i],rverr[i])
-        
-    # print mock_resid
-    
     ##run least square fit
     # (x1,x2,x3,x4,x5) = leastsq(residual,x0=(10,.01),full_output=True)
     # print x1
@@ -431,16 +424,48 @@ def fit_params(resid_file,freq):
     (x1,x2) = curve_fit(variance,phase,resid,p0=(10.,10.,-5.),sigma=rverr)
     ##best fit parameters
     # print x1
-    print x1[0]
-    print x1[1]
-    print x1[2]
-    print np.sqrt(x1[0]**2 + x1[1]**2)
+    A = x1[0]
+    print A
+    B = x1[1]
+    print B
+    cons = x1[2]
+    print cons
+    vmax = np.sqrt(A**2 + B**2)
+    print vmax
     #print x2
     ##want uncertainties from covariance matrix
     ##uncertainty in amplitude
-    print np.sqrt(x2.diagonal().item(0))
-    print np.sqrt(x2.diagonal().item(1))
-    print x2
+    A_sig =  np.sqrt(x2.diagonal().item(0))
+    print A_sig
+    B_sig =  np.sqrt(x2.diagonal().item(1))
+    print B_sig
+    ##covariance matrix
+    cov = x2
+    # print cov
+    # print x2[0]
+    co_a = x2[:2][0][:2]
+    co_b = x2[:2][1][:2]
+    co_ab = np.vstack((co_a,co_b))
+    print co_ab
+    ##start proess to calculate 95% confidence level
+    n = 1000 ##select number of trials
+    a = np.zeros(n)
+    b = np.zeros(n)
+    vmax_array = np.zeros(n)
+    ##draw from a multivariate gaussian
+    ##uses the fit parameters as mean, then uses covariance matrix
+    ##to find A and B, which will then be used to find Vmax
+    for j in range(n):
+        sample = np.random.multivariate_normal((A,B),co_ab)
+        a[j] = sample[0]
+        b[j] = sample[1]
+    vmax_array = np.sqrt(a**2 + b**2)
+    vmax_n, vmax_minmax, vmax_mean, vmax_var, vmax_skew, vmax_kurt = scipy.stats.describe(vmax_array)
+    vmax_std = np.sqrt(vmax_var)
+    ##get confidence level
+    CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
+    # print CL_vmax
+    print CL_vmax[1]
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
     ##make model from orbital parameters
