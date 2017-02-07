@@ -269,7 +269,7 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
     #plt.xlim(0,30)
-    plt.xlim(1,2400)    
+    plt.xlim(1,1000)    
     plt.show()
 
     # plt.semilogx(1/frequency, median - minus, color ='black')
