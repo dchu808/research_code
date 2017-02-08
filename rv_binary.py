@@ -429,7 +429,7 @@ def CL_vmax(resid_file):
         # print A_sig
         B_sig =  np.sqrt(x2.diagonal().item(1))
         # print B_sig
-        ##covariance matrix
+        ##covariance matrix, needed to draw values of A and B
         cov = x2
         # print cov
         # print x2[0]
@@ -443,19 +443,21 @@ def CL_vmax(resid_file):
         b = np.zeros(n)
         vmax_array = np.zeros(n)
         ##draw from a multivariate gaussian
-        ##uses the fit parameters as mean, then uses covariance matrix
+        ##uses the A and B fit parameters as mean, then uses covariance matrix
         ##to find A and B, which will then be used to find Vmax
         for j in range(n):
             sample = np.random.multivariate_normal((A,B),co_ab)
             a[j] = sample[0]
             b[j] = sample[1]
         vmax_array = np.sqrt(a**2 + b**2)
-        vmax_n, vmax_minmax, vmax_mean, vmax_var, vmax_skew, vmax_kurt = scipy.stats.describe(vmax_array)
-        vmax_std = np.sqrt(vmax_var)
+        # vmax_n, vmax_minmax, vmax_mean, vmax_var, vmax_skew, vmax_kurt = scipy.stats.describe(vmax_array)
+        vmax_mean, vmax_std = vmax_array.mean(), vmax_array.std(ddof=1)
+        # vmax_std = np.sqrt(vmax_var)
         ##get confidence level
         # CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
-        CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std)
+        CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std) ##should be ok for this number of samples
         # print CL_vmax
+        ##take the upper limit of the 95% Confidence Level
         CL_array[i] = CL_vmax[1]
     np.save('conf_lev',CL_array)
     np.save('period_array', period_array)
