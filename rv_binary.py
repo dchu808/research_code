@@ -273,7 +273,8 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
     #plt.xlim(0,30)
-    plt.xlim(1,1000)    
+    # plt.xlim(1,1000)
+    plt.xlim(320,410) ##individually focus around peaks
     plt.show()
 
     # plt.semilogx(1/frequency, median - minus, color ='black')
@@ -457,9 +458,20 @@ def CL_vmax(resid_file):
         # print CL_vmax
         CL_array[i] = CL_vmax[1]
     np.save('conf_lev',CL_array)
+    np.save('period_array', period_array)
     plt.figure()
     # plt.plot(1./freq_array,CL_array)
     plt.plot(period_array,CL_array)
+    plt.show()
+
+def vmax_period_plot(cl_array):
+    cl = np.load(cl_array)
+    period_array = np.arange(1.,100.,.1) 
+    plt.figure()
+    plt.plot(period_array,cl)
+    plt.xlabel('Period (Days)')
+    plt.ylabel('95% CL upper limit on Amplitude (km/s)')
+    plt.ylim(14,36)
     plt.show()
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
