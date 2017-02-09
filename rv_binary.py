@@ -208,7 +208,7 @@ def envelope_cdf_no_weights(freqarray,powerarray):
         ##each column is the power of a particular frequency. Read through columns
         col = power_array[:,j]
         ##want to take cdf of this column
-        ##start take by making a histogram, weighting it by weights
+        ##start take by making a histogram
         power,bin_edges = np.histogram(col,bins=10000,normed=False)
         ##start cdf process, normalize
         power_norm = np.array(power, dtype=float) / power.sum()
@@ -456,9 +456,11 @@ def CL_vmax(resid_file):
         ##get confidence level
         # CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
         CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std) ##should be ok for this number of samples
+        ##another test, more manual. critical value for 95% CL is 1.96
+        CL_array[i] = vmax_mean + (0.975 * vmax_std)
         # print CL_vmax
         ##take the upper limit of the 95% Confidence Level
-        CL_array[i] = CL_vmax[1]
+        # CL_array[i] = CL_vmax[1]
     np.save('conf_lev',CL_array)
     np.save('period_array', period_array)
     plt.figure()
@@ -473,7 +475,7 @@ def vmax_period_plot(cl_array):
     plt.plot(period_array,cl)
     plt.xlabel('Period (Days)')
     plt.ylabel('95% CL upper limit on Amplitude (km/s)')
-    plt.ylim(14,36)
+    # plt.ylim(14,36)
     plt.show()
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
