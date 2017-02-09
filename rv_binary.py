@@ -668,19 +668,19 @@ def array_append(dir):
     freq_3 = np.load(dir + 'freq_array_sa_1000day.npy')
     # freq_4 = np.load(dir + 'freq_array_sa_2400day.npy')
     
-    med_1 = np.load(dir + 'median_array_sa.npy')
-    med_2 = np.load(dir + 'median_array_sa_100day.npy')
-    med_3 = np.load(dir + 'median_array_sa_1000day.npy')
+    med_1 = np.load(dir + 'median_array_sa_check.npy')
+    med_2 = np.load(dir + 'median_array_sa_100day_check.npy')
+    med_3 = np.load(dir + 'median_array_sa_1000day_check.npy')
     # med_4 = np.load(dir + 'median_array_sa_2400day.npy')
     
-    plus_1 = np.load(dir + 'plus_array_sa.npy')
-    plus_2 = np.load(dir + 'plus_array_sa_100day.npy')
-    plus_3 = np.load(dir + 'plus_array_sa_1000day.npy')
+    plus_1 = np.load(dir + 'plus_array_sa_check.npy')
+    plus_2 = np.load(dir + 'plus_array_sa_100day_check.npy')
+    plus_3 = np.load(dir + 'plus_array_sa_1000day_check.npy')
     # plus_4 = np.load(dir + 'plus_array_sa_2400day.npy')
     
-    minus_1 = np.load(dir + 'minus_array_sa.npy')
-    minus_2 = np.load(dir + 'minus_array_sa_100day.npy')
-    minus_3 = np.load(dir + 'minus_array_sa_1000day.npy')
+    minus_1 = np.load(dir + 'minus_array_sa_check.npy')
+    minus_2 = np.load(dir + 'minus_array_sa_100day_check.npy')
+    minus_3 = np.load(dir + 'minus_array_sa_1000day_check.npy')
     # minus_4 = np.load(dir + 'minus_array_sa_2400day.npy')
     
     ##flip the arrays for plotting
@@ -716,10 +716,10 @@ def array_append(dir):
     complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip])
     
     ##save arrays
-    np.save('freq_array_sa_all', complete_freq)
-    np.save('median_array_sa_all', complete_med)
-    np.save('plus_array_sa_all', complete_plus)
-    np.save('minus_array_sa_all', complete_minus)
+    np.save('freq_array_sa_check_all', complete_freq)
+    np.save('median_array_sa_check_all', complete_med)
+    np.save('plus_array_sa_check_all', complete_plus)
+    np.save('minus_array_sa_check_all', complete_minus)
     
 ##turn an input of period and velocity max to mass of binary
 ##equation is binary mass equation
