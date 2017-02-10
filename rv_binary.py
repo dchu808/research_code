@@ -262,19 +262,20 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     # plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
     if noise == True:
         noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
-        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_all.npy')
-        noise_plus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/plus_array_sa_all.npy')
-        noise_minus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/minus_array_sa_all.npy')
+        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_check_all.npy')
+        noise_plus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/plus_array_sa_check_all.npy')
+        noise_minus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/minus_array_sa_check_all.npy')
         plt.semilogx(1/noise_freq, noise, color ='grey')
         plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', alpha=0.5)
         plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', alpha=0.5)
     # plt.set_xscale('log')
+	plt.axvline(x=1.084,linestyle='--',color='red')
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
     #plt.xlim(0,30)
     # plt.xlim(1,1000)
-    plt.xlim(320,410) ##individually focus around peaks
+    plt.xlim(1.07,1.1) ##individually focus around peaks
     plt.show()
 
     # plt.semilogx(1/frequency, median - minus, color ='black')
