@@ -668,12 +668,29 @@ def sens_analysis(rv_file,min_freq,max_freq):
 ##look into the power array produced from previous sens_analysis function
 def sens_analysis_2(power_array):
     power_array = np.load(power_array)
-    ##go through the power file, need to look at each simulation 1 at a time
+    ##go through the power file, need to look at each simulation one at a time
     ##for each simulation, take the max power
-    for j in tqdm(range(len(freq_array))):
-        ##each column is the power of a particular frequency. Read through columns
-        col = power_array[:,j]
+    max_power_array = np.zeros(power_array.shape[0])
+    for j in tqdm(range(power_array.shape[0])):
+        ##each row is the power for each of the frequencies. Read through the rows
+        row = power_array[j,:]
+        max_power = np.max(row)
+        max_power_array[j] = max_power
+    np.save('sens_analysis_max_power',max_power_array)
 
+def sens_analysis_2_histograms():
+    ##need to append the arrays to they cover all simulations done for the different period ranges
+    max10 = np.load('sens_analysis_max_power_10day.npy')
+    max100 = np.load('sens_analysis_max_power_100day.npy')
+    max1000 = np.load('sens_analysis_max_power_1000day.npy')
+    max_all = np.append(max10,[max100, max1000])
+    ##now with this array of max power values, look into their histogram
+    plt.figure()
+    n, bins, patches = plt.hist(max_all,bins = 13,range=(0.,.65)) ##will need to fuss with these parameters
+    plt.xlabel('Max Power Value')
+    plt.show()
+    print n
+    print bins
 
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
