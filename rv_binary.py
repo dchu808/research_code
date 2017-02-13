@@ -8,7 +8,8 @@ import pylab
 import matplotlib.pyplot as plt
 import asciidata
 import efit5_util_final
-from astropy.stats import LombScargle
+from astropy.table import Table, Column, MaskedColumn
+from astropy.io import ascii
 import astropy.units as u
 from astropy import constants as const
 #from u import cds
@@ -269,7 +270,7 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
         plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', alpha=0.5)
         plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', alpha=0.5)
     # plt.set_xscale('log')
-	plt.axvline(x=1.084,linestyle='--',color='red')
+    plt.axvline(x=1.084,linestyle='--',color='red')
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
@@ -384,7 +385,7 @@ def CL_vmax(resid_file):
     ##w = 2*pi/Period
     ##test freq 0.922322232223
     # freq_array = np.load(array) ##in case sample frequencies
-    period_array = np.arange(1.,100.,.1) ##sampling uniform periods
+    period_array = np.arange(1.,500.,.1) ##sampling uniform periods
     # print period_array
     ##data from file
     data = np.genfromtxt(resid_file)
@@ -458,16 +459,15 @@ def CL_vmax(resid_file):
         # CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
         CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std) ##should be ok for this number of samples
         ##another test, more manual. critical value for 95% CL is 1.96
-        CL_array[i] = vmax_mean + (0.975 * vmax_std)
+        # CL_array[i] = vmax_mean + (0.975 * vmax_std)
         # print CL_vmax
         ##take the upper limit of the 95% Confidence Level
-        # CL_array[i] = CL_vmax[1]
-    np.save('conf_lev',CL_array)
-    np.save('period_array', period_array)
-    plt.figure()
-    # plt.plot(1./freq_array,CL_array)
-    plt.plot(period_array,CL_array)
-    plt.show()
+        CL_array[i] = CL_vmax[1]
+    # np.save('conf_lev',CL_array)
+    # np.save('period_array', period_array)
+    ##save the data in table
+    data = Table([period_array,CL_array])
+    ascii.write(data, 'period_vmax.dat')
 
 def vmax_period_plot(cl_array):
     cl = np.load(cl_array)
@@ -622,6 +622,7 @@ def lombscargle(mjd,resid,rverr,min_freq,max_freq):
 
 ##develop sensativity analysis
 ##start with a non-periodic signal
+##see how noise level compares to the data - find a significant detection
 def sens_analysis(rv_file,min_freq,max_freq):
     rv_table = asciidata.open(rv_file)
     #read in RV data
@@ -660,6 +661,19 @@ def sens_analysis(rv_file,min_freq,max_freq):
         # plt.show()
     np.save('power_array',big_power_array)
     np.save('freq_array',freq_array)
+
+##another test of sensitivity
+##this time, want to ask what is the highest peaks of power
+##make histogram of peak power values
+##look into the power array produced from previous sens_analysis function
+def sens_analysis_2(power_array):
+    power_array = np.load(power_array)
+    ##go through the power file, need to look at each simulation 1 at a time
+    ##for each simulation, take the max power
+    for j in tqdm(range(len(freq_array))):
+        ##each column is the power of a particular frequency. Read through columns
+        col = power_array[:,j]
+
 
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
@@ -770,22 +784,44 @@ def bm_solve(period,vmaxkms,mass_tot):
 
 ##make plot of binary mass vs period
 ##requires Vmax vs period file
-def mass_period_plot(file_path,mass_tot):
+def mass_period_calc(file_path,mass_tot):
     ##read in the file
     info = np.genfromtxt(file_path)
     period_array = info[:,0]
     vmax_array = info[:,1]
+    ##when reading in the .npy arrays produced
+    # period_array = np.load(file_path + 'period_array.npy')
+    # vmax_array = np.load(file_path +'conf_lev_1.npy')
     binary_mass_array = np.zeros(len(period_array))
     
     ##feed these array information into the bm_solve function
     for i in tqdm(range(len(period_array))):
         binary_mass_array[i] = bm_solve(period_array[i], vmax_array[i], mass_tot)
-    print binary_mass_array
+    # print binary_mass_array
+    m_ratio = binary_mass_array/mass_tot
+    ##write out data file
+    data = Table([period_array,binary_mass_array,m_ratio], names = ['period','mass','m1/mtot'])
+    ascii.write(data,'mass_values.dat')
+def mass_period_plot(file_path):    
     ##make plot of period vs companion mass
+    ##load the data
+    info = np.genfromtxt(file_path)
+    period_array = info[:,0]
+    mass_comp = info[:,1]
+    mass_ratio = info[:,2]
+
+    ##for comparison sake
+    # info2 = np.genfromtxt('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/mass_values_20.dat')
+    # period_array2 = info2[:,0]
+    # mass_comp2 = info2[:,1]
+    # mass_ratio2 = info2[:,2]
+    
     plt.figure()
-    plt.plot(period_array,binary_mass_array)
+    plt.plot(period_array,mass_ratio, label='15Msun')
+    # plt.plot(period_array2,mass_ratio2, label='20Msun')
     plt.xlabel('Period (Days)')
-    plt.ylabel('Companion Mass Sin i (Solar Masses)')
+    plt.ylabel('Mass Ratio Sin i')
+    plt.legend()
     plt.show()
 
 ##if given a period, calculate the vmax, given a companion mass
