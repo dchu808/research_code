@@ -685,12 +685,27 @@ def sens_analysis_2_histograms():
     max1000 = np.load('sens_analysis_max_power_1000day.npy')
     max_all = np.append(max10,[max100, max1000])
     ##now with this array of max power values, look into their histogram
+    # plt.figure()
+    # n, bins, patches = plt.hist(max_all,bins = 13,range=(0.,.65)) ##will need to fuss with these parameters
+    # plt.xlabel('Max Power Value')
+    # plt.show()
+    # # print n
+    # # print bins
+
+    ##may be interesting to see the cdf as well, to figure out significance
+    power_sort = np.sort(max_all)
+
+    y_array = np.arange(power_sort.size)
+    s = float(power_sort.size) ##float is needed, otherwise next step produces 0s
+    ##this way the y-axis goes from 0 - 1.
+    y_array_norm = y_array/s
     plt.figure()
-    n, bins, patches = plt.hist(max_all,bins = 13,range=(0.,.65)) ##will need to fuss with these parameters
+    # plt.step(power_sort, np.arange(power_sort.size))
+    plt.step(power_sort, y_array_norm)
     plt.xlabel('Max Power Value')
+    plt.ylabel('CDF')
+    # plt.ylim(0,1)
     plt.show()
-    print n
-    print bins
 
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
