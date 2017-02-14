@@ -666,7 +666,7 @@ def sens_analysis(rv_file,min_freq,max_freq):
 ##this time, want to ask what is the highest peaks of power
 ##make histogram of peak power values
 ##look into the power array produced from previous sens_analysis function
-def sens_analysis_2(power_array):
+def sens_analysis_max_power(power_array):
     power_array = np.load(power_array)
     ##go through the power file, need to look at each simulation one at a time
     ##for each simulation, take the max power
@@ -678,7 +678,7 @@ def sens_analysis_2(power_array):
         max_power_array[j] = max_power
     np.save('sens_analysis_max_power',max_power_array)
 
-def sens_analysis_2_histograms():
+def sens_analysis_power_histograms():
     ##need to append the arrays to they cover all simulations done for the different period ranges
     max10 = np.load('sens_analysis_max_power_10day.npy')
     max100 = np.load('sens_analysis_max_power_100day.npy')
