@@ -205,8 +205,7 @@ def envelope_cdf_no_weights(freqarray,powerarray):
     
     ##go through the power file one line at a time to make cdfs
     ##Each value in one row has a weight value attached to it as well
-    # for j in tqdm(range(len(freq_array))):
-	for j in range(0):
+    for j in tqdm(range(len(freq_array))):
         ##each column is the power of a particular frequency. Read through columns
         col = power_array[:,j]
         ##want to take cdf of this column
@@ -215,13 +214,20 @@ def envelope_cdf_no_weights(freqarray,powerarray):
         ##start cdf process, normalize
         # power_norm = np.array(power, dtype=float) / power.sum()
         
-		##trying new way to handle histogram, in this case.
-		##this is all for one frequency, so we are only concerned with sorting the power values
-		##then, can figure out the significance by looking at cdf
-		power_sort = np.sort(col)
+        ##trying new way to handle histogram, in this case.
+        ##this is all for one frequency, so we are only concerned with sorting the power values
+        ##then, can figure out the significance by looking at normalized cdf, skip binning process from histogram function
+        ##don't need to worry about weighting the cdf, which is why np.histogram function was used previously
+        power_sort = np.sort(col)
+        # print power_sort[-1]
 
-	    y_array = np.arange(power_sort.size)
-	    s = float(power_sort.size)
+        ##normalizes the sorted array. This ensures they all add to 1
+        cdf = np.cumsum(power_sort)/np.sum(col)
+        # print cdf[-1]
+        ##Determine points for median, +/- 3 sigma
+        # print power_sort[idxm][0]
+        # print power_sort[idx3m][0]
+        # print power_sort[idx3p][0]
 
         # sid = (power_norm.argsort())[::-1] # indices for a reverse sort
         # sid = (power_norm.argsort())
@@ -232,23 +238,29 @@ def envelope_cdf_no_weights(freqarray,powerarray):
         ##cdf
         # cdf = np.cumsum(powerSort)
         
-        ##Determine points for median, +/- 3 sigma
-        # idxm = (np.where(cdf > 0.5))[0] #median
-        # idx1m = (np.where(cdf > 0.0027))[0] #3 sigma minus
-        # idx1p = (np.where(cdf > 0.9973))[0] #3 sigma plus
+        ##Determine indecies for median, +/- 3 sigma in the cdf
+        idxm = (np.where(cdf > 0.5))[0] #median
+        idx3m = (np.where(cdf > 0.0027))[0] #3 sigma minus
+        idx3p = (np.where(cdf > 0.9973))[0] #3 sigma plus
         
         # median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
         # level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
         # level1p = bin_edges[idx1p[0]] + 0.5*(bin_edges[1]-bin_edges[0])
+        
+        ##instead of looking through the bin edges of histogram, simply look at power value the indices give
+        ##in the sorted power array
+        median = power_sort[idxm][0]
+        level3m = power_sort[idx3m][0]
+        level3p = power_sort[idx3p][0]
 
         ##write these values to arrays
-        # median_array[j] = median
-        # minus_array[j] = level1m
-        # plus_array[j] = level1p
+        median_array[j] = median
+        minus_array[j] = level3m
+        plus_array[j] = level3p
     
-    # np.save('median_array', median_array)
-    # np.save('minus_array', minus_array)
-    # np.save('plus_array', plus_array)
+    np.save('median_array', median_array)
+    np.save('minus_array', minus_array)
+    np.save('plus_array', plus_array)
     
 def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     ##make a plot of the Lomb Scargle, plotting median power, +/- 1 sigma
@@ -724,19 +736,19 @@ def array_append(dir):
     freq_3 = np.load(dir + 'freq_array_sa_1000day.npy')
     # freq_4 = np.load(dir + 'freq_array_sa_2400day.npy')
     
-    med_1 = np.load(dir + 'median_array_sa_check.npy')
-    med_2 = np.load(dir + 'median_array_sa_100day_check.npy')
-    med_3 = np.load(dir + 'median_array_sa_1000day_check.npy')
+    med_1 = np.load(dir + 'median_array_sa_test.npy')
+    med_2 = np.load(dir + 'median_array_sa_100day_test.npy')
+    med_3 = np.load(dir + 'median_array_sa_1000day_test.npy')
     # med_4 = np.load(dir + 'median_array_sa_2400day.npy')
     
-    plus_1 = np.load(dir + 'plus_array_sa_check.npy')
-    plus_2 = np.load(dir + 'plus_array_sa_100day_check.npy')
-    plus_3 = np.load(dir + 'plus_array_sa_1000day_check.npy')
+    plus_1 = np.load(dir + 'plus_array_sa_test.npy')
+    plus_2 = np.load(dir + 'plus_array_sa_100day_test.npy')
+    plus_3 = np.load(dir + 'plus_array_sa_1000day_test.npy')
     # plus_4 = np.load(dir + 'plus_array_sa_2400day.npy')
     
-    minus_1 = np.load(dir + 'minus_array_sa_check.npy')
-    minus_2 = np.load(dir + 'minus_array_sa_100day_check.npy')
-    minus_3 = np.load(dir + 'minus_array_sa_1000day_check.npy')
+    minus_1 = np.load(dir + 'minus_array_sa_test.npy')
+    minus_2 = np.load(dir + 'minus_array_sa_100day_test.npy')
+    minus_3 = np.load(dir + 'minus_array_sa_1000day_test.npy')
     # minus_4 = np.load(dir + 'minus_array_sa_2400day.npy')
     
     ##flip the arrays for plotting
@@ -772,10 +784,10 @@ def array_append(dir):
     complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip])
     
     ##save arrays
-    np.save('freq_array_sa_check_all', complete_freq)
-    np.save('median_array_sa_check_all', complete_med)
-    np.save('plus_array_sa_check_all', complete_plus)
-    np.save('minus_array_sa_check_all', complete_minus)
+    # np.save('freq_array_sa_test_all', complete_freq)
+    np.save('median_array_sa_test_all', complete_med)
+    np.save('plus_array_sa_test_all', complete_plus)
+    np.save('minus_array_sa_test_all', complete_minus)
     
 ##turn an input of period and velocity max to mass of binary
 ##equation is binary mass equation
