@@ -205,41 +205,50 @@ def envelope_cdf_no_weights(freqarray,powerarray):
     
     ##go through the power file one line at a time to make cdfs
     ##Each value in one row has a weight value attached to it as well
-    for j in tqdm(range(len(freq_array))):
+    # for j in tqdm(range(len(freq_array))):
+	for j in range(0):
         ##each column is the power of a particular frequency. Read through columns
         col = power_array[:,j]
         ##want to take cdf of this column
         ##start take by making a histogram
-        power,bin_edges = np.histogram(col,bins=10000,normed=False)
+        # power,bin_edges = np.histogram(col,bins=10000,normed=False)
         ##start cdf process, normalize
-        power_norm = np.array(power, dtype=float) / power.sum()
+        # power_norm = np.array(power, dtype=float) / power.sum()
         
+		##trying new way to handle histogram, in this case.
+		##this is all for one frequency, so we are only concerned with sorting the power values
+		##then, can figure out the significance by looking at cdf
+		power_sort = np.sort(col)
+
+	    y_array = np.arange(power_sort.size)
+	    s = float(power_sort.size)
+
         # sid = (power_norm.argsort())[::-1] # indices for a reverse sort
-        sid = (power_norm.argsort())
-        powerSort = power_norm[sid]
+        # sid = (power_norm.argsort())
+        # powerSort = power_norm[sid]
         ##sort the original power array - should be the same as powerSort, but not normalized
         # powerSort_not_norm = power[sid]
         
         ##cdf
-        cdf = np.cumsum(powerSort)
+        # cdf = np.cumsum(powerSort)
         
         ##Determine points for median, +/- 3 sigma
-        idxm = (np.where(cdf > 0.5))[0] #median
-        idx1m = (np.where(cdf > 0.0027))[0] #3 sigma minus
-        idx1p = (np.where(cdf > 0.9973))[0] #3 sigma plus
+        # idxm = (np.where(cdf > 0.5))[0] #median
+        # idx1m = (np.where(cdf > 0.0027))[0] #3 sigma minus
+        # idx1p = (np.where(cdf > 0.9973))[0] #3 sigma plus
         
-        median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
-        level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
-        level1p = bin_edges[idx1p[0]] + 0.5*(bin_edges[1]-bin_edges[0])
+        # median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
+        # level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
+        # level1p = bin_edges[idx1p[0]] + 0.5*(bin_edges[1]-bin_edges[0])
 
         ##write these values to arrays
-        median_array[j] = median
-        minus_array[j] = level1m
-        plus_array[j] = level1p
+        # median_array[j] = median
+        # minus_array[j] = level1m
+        # plus_array[j] = level1p
     
-    np.save('median_array', median_array)
-    np.save('minus_array', minus_array)
-    np.save('plus_array', plus_array)
+    # np.save('median_array', median_array)
+    # np.save('minus_array', minus_array)
+    # np.save('plus_array', plus_array)
     
 def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     ##make a plot of the Lomb Scargle, plotting median power, +/- 1 sigma
