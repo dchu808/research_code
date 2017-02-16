@@ -284,9 +284,9 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     # plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
     if noise == True:
         noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
-        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_check_all.npy')
-        noise_plus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/plus_array_sa_check_all.npy')
-        noise_minus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/minus_array_sa_check_all.npy')
+        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_test_all.npy')
+        noise_plus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/plus_array_sa_test_all.npy')
+        noise_minus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/minus_array_sa_test_all.npy')
         plt.semilogx(1/noise_freq, noise, color ='grey')
         plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', alpha=0.5)
         plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', alpha=0.5)
@@ -296,8 +296,8 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
     #plt.xlim(0,30)
-    # plt.xlim(1,1000)
-    plt.xlim(1.07,1.1) ##individually focus around peaks
+    plt.xlim(1,1000)
+    # plt.xlim(1.07,1.1) ##individually focus around peaks
     plt.show()
 
     # plt.semilogx(1/frequency, median - minus, color ='black')
@@ -490,14 +490,18 @@ def CL_vmax(resid_file):
     data = Table([period_array,CL_array])
     ascii.write(data, 'period_vmax.dat')
 
-def vmax_period_plot(cl_array):
-    cl = np.load(cl_array)
-    period_array = np.arange(1.,100.,.1) 
+def vmax_period_plot(cl_file):
+    # cl = np.load(cl_array)
+    # period_array = np.arange(1.,100.,.1)
+    data = np.genfromtxt(cl_file)
+    period_array = data[:,0]
+    cl = data[:,1]
     plt.figure()
     plt.plot(period_array,cl)
     plt.xlabel('Period (Days)')
     plt.ylabel('95% CL upper limit on Amplitude (km/s)')
-    # plt.ylim(14,36)
+    plt.ylim(14,36)
+    plt.xlim(1.,130.)
     plt.show()
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
@@ -699,19 +703,20 @@ def sens_analysis_2(power_array):
         max_power_array[j] = max_power
     np.save('sens_analysis_max_power',max_power_array)
 
-def sens_analysis_2_histograms():
+def sens_analysis_2_histograms(dir):
     ##need to append the arrays to they cover all simulations done for the different period ranges
-    max10 = np.load('sens_analysis_max_power_10day.npy')
-    max100 = np.load('sens_analysis_max_power_100day.npy')
-    max1000 = np.load('sens_analysis_max_power_1000day.npy')
+    max10 = np.load(dir + 'sens_analysis_max_power_10day.npy')
+    max100 = np.load(dir +'sens_analysis_max_power_100day.npy')
+    max1000 = np.load(dir + 'sens_analysis_max_power_1000day.npy')
     max_all = np.append(max10,[max100, max1000])
     ##now with this array of max power values, look into their histogram
-    # plt.figure()
-    # n, bins, patches = plt.hist(max_all,bins = 13,range=(0.,.65)) ##will need to fuss with these parameters
-    # plt.xlabel('Max Power Value')
-    # plt.show()
-    # # print n
-    # # print bins
+    plt.figure()
+    # n, bins, patches = plt.hist(max_all,bins = 26,range=(0.,.65)) ##will need to fuss with these parameters
+    n, bins, patches = plt.hist(max_all,bins = 'auto')
+    plt.xlabel('Max Power Value')
+    plt.show()
+    # print n
+    # print bins
 
     ##may be interesting to see the cdf as well, to figure out significance
     power_sort = np.sort(max_all)
@@ -855,7 +860,7 @@ def mass_period_calc(file_path,mass_tot):
     ##write out data file
     data = Table([period_array,binary_mass_array,m_ratio], names = ['period','mass','m1/mtot'])
     ascii.write(data,'mass_values.dat')
-def mass_period_plot(file_path):    
+def mass_period_plot(file_path,hill_limit=False):    
     ##make plot of period vs companion mass
     ##load the data
     info = np.genfromtxt(file_path)
@@ -864,17 +869,27 @@ def mass_period_plot(file_path):
     mass_ratio = info[:,2]
 
     ##for comparison sake
-    # info2 = np.genfromtxt('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/mass_values_20.dat')
+    # info2 = np.genfromtxt('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/mass_values_20msun.dat')
     # period_array2 = info2[:,0]
     # mass_comp2 = info2[:,1]
     # mass_ratio2 = info2[:,2]
     
     plt.figure()
-    plt.plot(period_array,mass_ratio, label='15Msun')
+    plt.plot(period_array,mass_ratio, label='14.1Msun')
     # plt.plot(period_array2,mass_ratio2, label='20Msun')
+    if hill_limit == True:
+        t = 119.1 ##this is the 119.1 day limit from Hill radius for case where all mass is S0-2
+        # plt.plot(period_array,1. - period_array**2/t**2,color = 'black')
+        plt.fill_between(period_array,1. - period_array**2/t**2,.5,color = 'red',alpha=1.)
     plt.xlabel('Period (Days)')
     plt.ylabel('Mass Ratio Sin i')
+    plt.xlim(1.,150.)
+    plt.ylim(0.,.4)
     plt.legend()
+    plt.savefig('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/period_massratio_hill.png')
+    plt.savefig('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/period_massratio_hill.pdf')
+    # plt.savefig('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/period_massratio_compare_2.png')
+    # plt.savefig('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/period_massratio_compare_2.pdf')
     plt.show()
 
 ##if given a period, calculate the vmax, given a companion mass
