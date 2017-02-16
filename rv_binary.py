@@ -704,32 +704,44 @@ def sens_analysis_2(power_array):
     np.save('sens_analysis_max_power',max_power_array)
 
 def sens_analysis_2_histograms(dir):
-    ##need to append the arrays to they cover all simulations done for the different period ranges
+    ##need to look through the arrays since they cover all simulations done for the different period ranges
     max10 = np.load(dir + 'sens_analysis_max_power_10day.npy')
     max100 = np.load(dir +'sens_analysis_max_power_100day.npy')
     max1000 = np.load(dir + 'sens_analysis_max_power_1000day.npy')
-    max_all = np.append(max10,[max100, max1000])
+    max_all = np.zeros(len(max10))
+    # print max_all.shape
+    for j in range(len(max10)):
+        ##this will look through simiulation j, and see what was the max of each of the arrays
+        ##it will keep the max one
+        x = np.array([max10[j],max100[j],max100[j]])
+        max_all[j] = np.max(x)
+    # print max_all
+    # print max_all.shape
     ##now with this array of max power values, look into their histogram
     plt.figure()
-    # n, bins, patches = plt.hist(max_all,bins = 26,range=(0.,.65)) ##will need to fuss with these parameters
+    # # n, bins, patches = plt.hist(max_all,bins = 26,range=(0.,.65)) ##will need to fuss with these parameters
     n, bins, patches = plt.hist(max_all,bins = 'auto')
     plt.xlabel('Max Power Value')
+    plt.savefig(dir + 'max_power_hist.png')
+    plt.savefig(dir + 'max_power_hist.pdf')
     plt.show()
-    # print n
-    # print bins
-
+    # # print n
+    # # print bins
+    # 
     ##may be interesting to see the cdf as well, to figure out significance
     power_sort = np.sort(max_all)
-
+    # 
     y_array = np.arange(power_sort.size)
     s = float(power_sort.size) ##float is needed, otherwise next step produces 0s
-    ##this way the y-axis goes from 0 - 1.
+    #this way the y-axis goes from 0 - 1.
     y_array_norm = y_array/s
     plt.figure()
     # plt.step(power_sort, np.arange(power_sort.size))
     plt.step(power_sort, y_array_norm)
     plt.xlabel('Max Power Value')
     plt.ylabel('CDF')
+    plt.savefig(dir + 'max_power_cdf.png')
+    plt.savefig(dir + 'max_power_cdf.pdf')
     # plt.ylim(0,1)
     plt.show()
 
