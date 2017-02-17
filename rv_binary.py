@@ -147,7 +147,7 @@ def envelope_cdf(freqarray,powerarray,weights_array):
     ##go through the power file one line at a time to make cdfs
     ##Each value in one row has a weight value attached to it as well
     for j in tqdm(range(len(freq_array))):
-    # for j in range(len(freq_array)):
+    # for j in range(1):
         ##each column is the power of a particular frequency. Read through columns
         col = power_array[:,j]
         ##want to take cdf of this column
@@ -155,35 +155,37 @@ def envelope_cdf(freqarray,powerarray,weights_array):
         power,bin_edges = np.histogram(col,bins=10000,normed=False,weights=weights)
         # print power
         ##start cdf process, normalize
-        power_norm = np.array(power, dtype=float) / power.sum()
+        # power_norm = np.array(power, dtype=float) / power.sum()
+        # print power_norm
         
         # sid = (power_norm.argsort())[::-1] # indices for a reverse sort
-        sid = (power_norm.argsort())
-        powerSort = power_norm[sid] ##this is now normalized
-        #print powerSort
+        # sid = (power_norm.argsort())
+        sid = (power.argsort())
+        # powerSort = power_norm[sid] ##this is now normalized
+        powerSort = power[sid]
+        # print powerSort
         ##sort the original power array - should be the same as powerSort, but not normalized
         # powerSort_not_norm = power[sid]
         
         ##cdf
-        # cdf = np.cumsum(powerSort) ##this was an extra step that threw off normalization
+        cdf = np.cumsum(powerSort) ##this was an extra step that threw off normalization
         # print cdf
         
         ##Determine points for median, +/- 1 sigma
-        idxm = (np.where(powerSort > 0.5))[0] #median
-        idx1m = (np.where(powerSort > 0.3173))[0] #1 sigma minus
-        idx1p = (np.where(powerSort > 0.6827))[0] #1 sigma plus
+        idxm = (np.where(cdf > 0.5))[0] #median
+        idx1m = (np.where(cdf > 0.3173))[0] #1 sigma minus
+        idx1p = (np.where(cdf > 0.6827))[0] #1 sigma plus
+        # print idxm[0]
+        # print idx1m[0]
+        # print idx1p[0]
         
-        median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
+        median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0])
         level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
         level1p = bin_edges[idx1p[0]] + 0.5*(bin_edges[1]-bin_edges[0])
-
-        # median = powerSort[idxm[0]]
-        # level1m = powerSort[idx1m[0]]
-        # level1p = powerSort[idx1p[0]]
-        ##Use the original power values
-        # median = powerSort_not_norm[idxm]
-        # level1m = powerSort_not_norm[idx1m]
-        # level1p = powerSort_not_norm[idx1p]
+        # print median
+        # print level1m
+        # print level1p
+        # print bin_edges
 
         ##write these values to arrays
         median_array[j] = median
