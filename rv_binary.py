@@ -8,6 +8,7 @@ import pylab
 import matplotlib.pyplot as plt
 import asciidata
 import efit5_util_final
+from astropy.stats import LombScargle
 from astropy.table import Table, Column, MaskedColumn
 from astropy.io import ascii
 import astropy.units as u
@@ -146,6 +147,7 @@ def envelope_cdf(freqarray,powerarray,weights_array):
     ##go through the power file one line at a time to make cdfs
     ##Each value in one row has a weight value attached to it as well
     for j in tqdm(range(len(freq_array))):
+    # for j in range(len(freq_array)):
         ##each column is the power of a particular frequency. Read through columns
         col = power_array[:,j]
         ##want to take cdf of this column
@@ -157,17 +159,19 @@ def envelope_cdf(freqarray,powerarray,weights_array):
         
         # sid = (power_norm.argsort())[::-1] # indices for a reverse sort
         sid = (power_norm.argsort())
-        powerSort = power_norm[sid]
+        powerSort = power_norm[sid] ##this is now normalized
+        #print powerSort
         ##sort the original power array - should be the same as powerSort, but not normalized
         # powerSort_not_norm = power[sid]
         
         ##cdf
-        cdf = np.cumsum(powerSort)
+        # cdf = np.cumsum(powerSort) ##this was an extra step that threw off normalization
+        # print cdf
         
         ##Determine points for median, +/- 1 sigma
-        idxm = (np.where(cdf > 0.5))[0] #median
-        idx1m = (np.where(cdf > 0.3173))[0] #1 sigma minus
-        idx1p = (np.where(cdf > 0.6827))[0] #1 sigma plus
+        idxm = (np.where(powerSort > 0.5))[0] #median
+        idx1m = (np.where(powerSort > 0.3173))[0] #1 sigma minus
+        idx1p = (np.where(powerSort > 0.6827))[0] #1 sigma plus
         
         median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
         level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
@@ -613,26 +617,19 @@ def make_rv_resid_file(rv_file,model_file,star):
 
 ##lomb scargle process
 def lombscargle_file(resid_file):
-    data = np.genfromtxt(resid_file, names=['rvmjd','resid','rverr'])
-    # print
-    # print len(data)
-    mjd = np.zeros(len(data))
-    resid = np.zeros(len(data))
-    rverr = np.zeros(len(data))
-    for i in range(len(data)):
-        mjd[i] = data[i][0]
-        resid[i] = data[i][1]
-        rverr[i] = data[i][2]
-    # print mjd
+    data = np.genfromtxt(resid_file)
+    mjd = data[:,0]
+    resid = data[:,1]
+    rverr = data[:,2]
     # mjd_days = mjd * u.day
     ##maximum frequency works out to about 1000 day period
     frequency, power = LombScargle(mjd,resid,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.,samples_per_peak=2.,method='fast')
-    print len(frequency)
+    # print len(frequency)
     #plt.plot(1./frequency, power)
     plt.semilogx(1./frequency, power, color='black')
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
-    plt.xlim(0,10)
+    plt.xlim(0,1000)
     plt.show()
 
 def lombscargle(mjd,resid,rverr,min_freq,max_freq):
