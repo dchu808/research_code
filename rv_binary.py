@@ -939,4 +939,56 @@ def vmax_array(m_test,mass_tot,freq_array):
     for i in tqdm(range(len(periods))):
         vmax_array[i] = vmax_find(m_test,mass_tot,periods[i])
     print vmax_array[:30]
-        
+
+##function to look through weighted chains, find 95% Confidence levels
+##this comes from Aurelien's analysis of looking at eccentric spectroscopic binaries
+def weighted_conf_lev(chains_file):
+    data = np.genfromtxt(chains_file)
+    weights = data[:,0]
+    amp = data[:,1] ##specifically 2 pi a / P
+    ecc = data[:,2] ##eccentricity
+    w = data[:,3] ##small omega, argument of periapse
+    WJ2000[:,4] ##mean longitude at J2000
+    ##to get the confidence levels, need mean and standard dev
+    ##however, these are weighted, so need to use weighted average and weighted standard dev
+    
+    amp_weight_avg = np.average(amp,weights=weights)
+    ecc_weight_avg = np.average(ecc,weights=weights)
+    w_weight_avg = np.average(w,weights=weights)
+    WJ2000_weight_avg = np.average(WJ2000,weights=weights)
+    
+    ##next, standard deviation is needed
+    ##take the weighted sample variance, then take the square root to get standard dev
+    ##couldn't find a python function, so writing my own
+    ##https://en.wikipedia.org/wiki/Weighted_arithmetic_mean#Weighted_sample_variance
+    def weight_stand_dev(elem_array,weight_avg,weights):
+        x = (elem_array - weight_avg)**2 ##subtract each element from weighted average
+        y = weights*x ##will then need to sum over this
+        z = np.sum(y)
+        ##Double check if weights are normalized to 1 - should be, but in case not
+        v = np.sum(weights)
+        ##the following is then the variance
+        var = z/v
+        ##standard deviation will be square root of variance
+        stand_dev = np.sqrt(var)
+        return stand_dev
+    
+    amp_stand_dev = weight_stand_dev(amp,amp_weight_avg,weights)
+    ecc_stand_dev = weight_stand_dev(ecc,ecc_weight_avg,weights)
+    w_stand_dev = weight_stand_dev(w,w_weight_avg,weights)
+    WJ2000_stand_dev = weight_stand_dev(WJ2000,WJ2000_weight_avg,weights)
+    
+    ##Now with weighted average and standard deviation, can do the 95% confidence interval
+    ##Use similar method as before in other programs
+    CL_amp = stats.norm.interval(0.95, loc=amp_weight_avg, scale=amp_stand_dev)
+    CL_ecc = stats.norm.interval(0.95, loc=ecc_weight_avg, scale=ecc_stand_dev)
+    CL_w = stats.norm.interval(0.95, loc=w_weight_avg, scale=w_stand_dev)
+    CL_WJ2000 = stats.norm.interval(0.95, loc=WJ2000_weight_avg, scale=WJ2000_stand_dev)
+    
+    ##list of the elements
+    elem = ['amp','e','w','WJ200']
+    
+    # output = Table([elem,CL], names = ['elem','95low','95high'])
+    # ascii.write(data,'mass_values.dat')
+    
+    
