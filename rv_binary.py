@@ -192,9 +192,9 @@ def envelope_cdf(freqarray,powerarray,weights_array):
         minus_array[j] = level1m
         plus_array[j] = level1p
     
-    np.save('median_array', median_array)
-    np.save('minus_array', minus_array)
-    np.save('plus_array', plus_array)
+    np.save('median_array_1000day', median_array)
+    np.save('minus_array_1000day', minus_array)
+    np.save('plus_array_1000day', plus_array)
 
 ##envelope cdf but no weights. For sensativity analysis
 def envelope_cdf_no_weights(freqarray,powerarray):
@@ -286,8 +286,8 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     plt.semilogx(1/frequency, median, color ='black')
     # plt.semilogx(1/frequency, minus, color ='gray',alpha=.5)
     # plt.plot(1/frequency,median,alpha=0)
-    # plt.fill_between(1/frequency,median,plus,facecolor='yellow', alpha=0.5)
-    # plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
+    plt.fill_between(1/frequency,median,plus,facecolor='yellow', alpha=0.5)
+    plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
     if noise == True:
         noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
         noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_test_all.npy')
@@ -297,7 +297,7 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
         plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', alpha=0.5)
         plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', alpha=0.5)
     # plt.set_xscale('log')
-    plt.axvline(x=1.084,linestyle='--',color='red')
+    # plt.axvline(x=1.084,linestyle='--',color='red')
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
@@ -480,7 +480,7 @@ def CL_vmax(resid_file):
             b[j] = sample[1]
         vmax_array = np.sqrt(a**2 + b**2)
         # vmax_n, vmax_minmax, vmax_mean, vmax_var, vmax_skew, vmax_kurt = scipy.stats.describe(vmax_array)
-        vmax_mean, vmax_std = vmax_array.mean(), vmax_array.std(ddof=1)
+        vmax_mean, vmax_std = vmax_array.mean(), vmax_array.std(ddof=1) ##maybe ddof should be different?
         # vmax_std = np.sqrt(vmax_var)
         ##get confidence level
         # CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
@@ -618,7 +618,7 @@ def make_rv_resid_file(rv_file,model_file,star):
     output.close()
 
 ##lomb scargle process
-def lombscargle_file(resid_file):
+def lombscargle_file(resid_file,output=False):
     data = np.genfromtxt(resid_file)
     mjd = data[:,0]
     resid = data[:,1]
@@ -633,6 +633,9 @@ def lombscargle_file(resid_file):
     plt.ylabel('Power')
     plt.xlim(0,1000)
     plt.show()
+    if output == True:
+        data = Table([frequency, power], names = ['frequency','power'])
+        ascii.write(data,'LS_output.dat')
 
 def lombscargle(mjd,resid,rverr,min_freq,max_freq):
     ##maximum frequency of .001 works out to about 1000 day period
@@ -747,25 +750,25 @@ def sens_analysis_2_histograms(dir):
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
 def array_append(dir):
-    freq_1 = np.load(dir + 'freq_array_sa.npy')
-    freq_2 = np.load(dir + 'freq_array_sa_100day.npy')
-    freq_3 = np.load(dir + 'freq_array_sa_1000day.npy')
-    # freq_4 = np.load(dir + 'freq_array_sa_2400day.npy')
+    freq_1 = np.load(dir + 'freq_array.npy')
+    freq_2 = np.load(dir + 'freq_array_100day.npy')
+    freq_3 = np.load(dir + 'freq_array_1000day.npy')
+    # freq_4 = np.load(dir + 'freq_array_2400day.npy')
     
-    med_1 = np.load(dir + 'median_array_sa_test.npy')
-    med_2 = np.load(dir + 'median_array_sa_100day_test.npy')
-    med_3 = np.load(dir + 'median_array_sa_1000day_test.npy')
-    # med_4 = np.load(dir + 'median_array_sa_2400day.npy')
+    med_1 = np.load(dir + 'median_array_10day.npy')
+    med_2 = np.load(dir + 'median_array_100day.npy')
+    med_3 = np.load(dir + 'median_array_1000day.npy')
+    # med_4 = np.load(dir + 'median_array_2400day.npy')
     
-    plus_1 = np.load(dir + 'plus_array_sa_test.npy')
-    plus_2 = np.load(dir + 'plus_array_sa_100day_test.npy')
-    plus_3 = np.load(dir + 'plus_array_sa_1000day_test.npy')
-    # plus_4 = np.load(dir + 'plus_array_sa_2400day.npy')
+    plus_1 = np.load(dir + 'plus_array_10day.npy')
+    plus_2 = np.load(dir + 'plus_array_100day.npy')
+    plus_3 = np.load(dir + 'plus_array_1000day.npy')
+    # plus_4 = np.load(dir + 'plus_array_2400day.npy')
     
-    minus_1 = np.load(dir + 'minus_array_sa_test.npy')
-    minus_2 = np.load(dir + 'minus_array_sa_100day_test.npy')
-    minus_3 = np.load(dir + 'minus_array_sa_1000day_test.npy')
-    # minus_4 = np.load(dir + 'minus_array_sa_2400day.npy')
+    minus_1 = np.load(dir + 'minus_array_10day.npy')
+    minus_2 = np.load(dir + 'minus_array_100day.npy')
+    minus_3 = np.load(dir + 'minus_array_1000day.npy')
+    # minus_4 = np.load(dir + 'minus_array_2400day.npy')
     
     ##flip the arrays for plotting
     freq_1_flip = freq_1[::-1]
@@ -800,10 +803,10 @@ def array_append(dir):
     complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip])
     
     ##save arrays
-    # np.save('freq_array_sa_test_all', complete_freq)
-    np.save('median_array_sa_test_all', complete_med)
-    np.save('plus_array_sa_test_all', complete_plus)
-    np.save('minus_array_sa_test_all', complete_minus)
+    np.save('freq_array_all', complete_freq)
+    np.save('median_array_all', complete_med)
+    np.save('plus_array_all', complete_plus)
+    np.save('minus_array_all', complete_minus)
     
 ##turn an input of period and velocity max to mass of binary
 ##equation is binary mass equation
