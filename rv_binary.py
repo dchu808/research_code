@@ -747,6 +747,54 @@ def sens_analysis_2_histograms(dir):
     # plt.ylim(0,1)
     plt.show()
 
+##sensativity analysis but with a periodic signal
+def sens_analysis_per(resid_file,period,rv_amp):
+    ##read in the resid file to get times
+    resid = np.genfromtxt(resid_file)
+    mjd = resid[:,0]
+    rverr = resid[:,2]
+    ##fold curve to period as a check
+    freq = 1./period ##period in days
+    w = 2. * np.pi / period
+    ##generating a fake sine signal for now
+    fake_curve = np.zeros(len(mjd))
+    fake_curve_werror = np.zeros(len(mjd))
+    for i in range(len(mjd)):
+        ##sample the point in our observations in this fake curve
+        x = rv_amp * np.sin(w*mjd[i]) + rv_amp * np.cos(w*mjd[i])
+        fake_curve[i] = x
+        ##also create fake curve with points shifted by error
+        fake_curve_werror[i] = np.random.normal(x,rverr[i])
+    ##plot curve to see if it makes sense
+    test_time = np.linspace(np.min(mjd),np.max(mjd),num=1000,endpoint=True)
+    test_curve = np.zeros(len(test_time))
+    ##test fake curve
+    for i in range(len(test_time)):
+        ##sample the point in our observations in this fake curve
+        y = rv_amp * np.sin(w*test_time[i]) + rv_amp * np.cos(w*test_time[i])
+        test_curve[i] = y    
+    plt.figure()
+    # plt.errorbar(mjd,fake_curve,rverr,fmt='o',color='black')
+    plt.errorbar(mjd,fake_curve_werror,rverr,fmt='o',color='black')
+    plt.plot(test_time,test_curve)
+    plt.xlabel('MJD')
+    plt.ylabel('Residual (km/s)')
+    plt.title('Period in days={0:.3f}'.format(period))
+    plt.show()
+
+    ##Lomb-Scargle Test
+    # frequency, power = LombScargle(mjd,fake_curve,rverr).autopower(minimum_frequency=0.01,maximum_frequency=1.,samples_per_peak=2.)
+    # frequency, power = LombScargle(mjd,fake_curve_werror,rverr).autopower(minimum_frequency=0.01,maximum_frequency=1.,samples_per_peak=2.)
+    frequency = np.linspace(0.005,1.,30000)
+    power = LombScargle(mjd,fake_curve_werror,rverr).power(frequency,method='fast')
+    plt.semilogx(1./frequency, power, color='black')
+    plt.axvline(x=period,linestyle='--',color='red')
+    plt.xlabel('Period (Days)')
+    plt.ylabel('Power')
+    plt.title('Period in days={0:.3f}'.format(period))
+    plt.xlim(0,100)
+    plt.show()
+
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
 def array_append(dir):
