@@ -286,8 +286,8 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     plt.semilogx(1/frequency, median, color ='black')
     # plt.semilogx(1/frequency, minus, color ='gray',alpha=.5)
     # plt.plot(1/frequency,median,alpha=0)
-    plt.fill_between(1/frequency,median,plus,facecolor='yellow', alpha=0.5)
-    plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
+    plt.fill_between(1/frequency,median,plus,facecolor='yellow', linecolor='yellow',alpha=0.5)
+    plt.fill_between(1/frequency,minus,median,facecolor='yellow', linecolor='yellow',alpha=0.5)
     if noise == True:
         noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
         noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_test_all.npy')
@@ -754,7 +754,7 @@ def sens_analysis_per(resid_file,period,rv_amp):
     ##read in the resid file to get times
     resid = np.genfromtxt(resid_file)
     mjd = resid[:,0]
-	res = resid[:,1]
+    res = resid[:,1]
     rverr = resid[:,2]
     ##fold curve to period as a check
     freq = 1./period ##period in days
@@ -774,8 +774,8 @@ def sens_analysis_per(resid_file,period,rv_amp):
             # fake_curve[i] = x
             ##also create fake curve with points shifted by error
             fake_curve_werror[i] = np.random.normal(x,rverr[i])
-			##want to add this fake curve onto the current residual
-			fake_curve_werror[i] = np.random.normal(res[i] + x,rverr[i])
+            ##want to add this fake curve onto the current residual
+            fake_curve_werror[i] = np.random.normal(res[i] + x,rverr[i])
         ##plot curve to see if it makes sense
         # test_time = np.linspace(np.min(mjd),np.max(mjd),num=1000,endpoint=True)
         # test_curve = np.zeros(len(test_time))
