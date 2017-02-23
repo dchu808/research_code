@@ -707,16 +707,18 @@ def sens_analysis_2(power_array):
 
 def sens_analysis_2_histograms(dir):
     ##need to look through the arrays since they cover all simulations done for the different period ranges
-    max10 = np.load(dir + 'sens_analysis_max_power_10day.npy')
-    max100 = np.load(dir +'sens_analysis_max_power_100day.npy')
-    max1000 = np.load(dir + 'sens_analysis_max_power_1000day.npy')
-    max_all = np.zeros(len(max10))
-    # print max_all.shape
-    for j in range(len(max10)):
-        ##this will look through simiulation j, and see what was the max of each of the arrays
-        ##it will keep the max one
-        x = np.array([max10[j],max100[j],max100[j]])
-        max_all[j] = np.max(x)
+    # max10 = np.load(dir + 'sens_analysis_max_power_10day.npy')
+    # max100 = np.load(dir +'sens_analysis_max_power_100day.npy')
+    # max1000 = np.load(dir + 'sens_analysis_max_power_1000day.npy')
+    # max_all = np.zeros(len(max10))
+    # # print max_all.shape
+    # for j in range(len(max10)):
+    #     ##this will look through simiulation j, and see what was the max of each of the arrays
+    #     ##it will keep the max one
+    #     x = np.array([max10[j],max100[j],max100[j]])
+    #     max_all[j] = np.max(x)
+    ##if don't need to append the arrays, just use this one array
+    max_all = np.load(dir + 'max_power_5day_10kms.npy')
     # print max_all
     # print max_all.shape
     ##now with this array of max power values, look into their histogram
@@ -724,8 +726,8 @@ def sens_analysis_2_histograms(dir):
     # # n, bins, patches = plt.hist(max_all,bins = 26,range=(0.,.65)) ##will need to fuss with these parameters
     n, bins, patches = plt.hist(max_all,bins = 'auto')
     plt.xlabel('Max Power Value')
-    plt.savefig(dir + 'max_power_hist.png')
-    plt.savefig(dir + 'max_power_hist.pdf')
+    plt.savefig(dir + 'max_power_hist_5day_10kms.png')
+    plt.savefig(dir + 'max_power_hist_5day_10kms.pdf')
     plt.show()
     # # print n
     # # print bins
@@ -752,6 +754,7 @@ def sens_analysis_per(resid_file,period,rv_amp):
     ##read in the resid file to get times
     resid = np.genfromtxt(resid_file)
     mjd = resid[:,0]
+	res = resid[:,1]
     rverr = resid[:,2]
     ##fold curve to period as a check
     freq = 1./period ##period in days
@@ -763,14 +766,16 @@ def sens_analysis_per(resid_file,period,rv_amp):
     for k in tqdm(range(n)):
     
         ##generating a fake sine signal for now
-        fake_curve = np.zeros(len(mjd))
+        # fake_curve = np.zeros(len(mjd))
         fake_curve_werror = np.zeros(len(mjd))
         for i in range(len(mjd)):
             ##sample the point in our observations in this fake curve
             x = rv_amp * np.sin(w*mjd[i]) + rv_amp * np.cos(w*mjd[i])
-            fake_curve[i] = x
+            # fake_curve[i] = x
             ##also create fake curve with points shifted by error
             fake_curve_werror[i] = np.random.normal(x,rverr[i])
+			##want to add this fake curve onto the current residual
+			fake_curve_werror[i] = np.random.normal(res[i] + x,rverr[i])
         ##plot curve to see if it makes sense
         # test_time = np.linspace(np.min(mjd),np.max(mjd),num=1000,endpoint=True)
         # test_curve = np.zeros(len(test_time))
