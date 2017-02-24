@@ -264,9 +264,9 @@ def envelope_cdf_no_weights(freqarray,powerarray):
         minus_array[j] = level3m
         plus_array[j] = level3p
     
-    np.save('median_array_5day_10kms', median_array)
-    np.save('minus_array_5day_10kms', minus_array)
-    np.save('plus_array_5day_10kms', plus_array)
+    np.save('median_array_5day_10kms_add', median_array)
+    np.save('minus_array_5day_10kms_add', minus_array)
+    np.save('plus_array_5day_10kms_add', plus_array)
     
 def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     ##make a plot of the Lomb Scargle, plotting median power, +/- 1 sigma
@@ -286,16 +286,16 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     plt.semilogx(1/frequency, median, color ='black')
     # plt.semilogx(1/frequency, minus, color ='gray',alpha=.5)
     # plt.plot(1/frequency,median,alpha=0)
-    plt.fill_between(1/frequency,median,plus,facecolor='yellow', linecolor='yellow',alpha=0.5)
-    plt.fill_between(1/frequency,minus,median,facecolor='yellow', linecolor='yellow',alpha=0.5)
+    plt.fill_between(1/frequency,median,plus,facecolor='yellow', color='yellow',alpha=0.5)
+    plt.fill_between(1/frequency,minus,median,facecolor='yellow', color='yellow',alpha=0.5)
     if noise == True:
         noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
         noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_test_all.npy')
         noise_plus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/plus_array_sa_test_all.npy')
         noise_minus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/minus_array_sa_test_all.npy')
         plt.semilogx(1/noise_freq, noise, color ='grey')
-        plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', alpha=0.5)
-        plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', alpha=0.5)
+        plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', color='red', alpha=0.5)
+        plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', color='red', alpha=0.5)
     # plt.set_xscale('log')
     # plt.axvline(x=1.084,linestyle='--',color='red')
     plt.xlabel('Period (Days)')
@@ -312,31 +312,26 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     # plt.semilogx(1/frequency, plus - median, color ='black')
     # plt.show()
 
-def plot_env_2(freqarray_1,median_1,plus_env_1,minus_env_1,freqarray_2,median_2,plus_env_2,minus_env_2):
-    ##basically combining 2 plot env to expand frequency range
-    frequency_1 = np.load(freqarray_1)
-    median_1 = np.load(median_1)
-    plus_1 = np.load(plus_env_1)
-    minus_1 = np.load(minus_env_1)
+def plot_env_2(ls_file,noise=False):
+    ##plotting the lomb scargle file from the best fit model with/without noise
+    data = np.genfromtxt(ls_file)
+    freq_array = data[:,0]
+    power_array = data[:,1]
 
-    frequency_2 = np.load(freqarray_2)
-    median_2 = np.load(median_2)
-    plus_2 = np.load(plus_env_2)
-    minus_2 = np.load(minus_env_2)
-
-    plt.semilogx(1/frequency_1,median_1,alpha=0)
-    plt.fill_between(1/frequency_1,median_1,plus_1,facecolor='yellow', alpha=0.5)
-    plt.fill_between(1/frequency_1,minus_1,median_1,facecolor='yellow', alpha=0.5)
-
-    plt.semilogx(1/frequency_2,median_2,alpha=0)
-    plt.fill_between(1/frequency_2,median_2,plus_2,facecolor='yellow', alpha=0.5)
-    plt.fill_between(1/frequency_2,minus_2,median_2,facecolor='yellow', alpha=0.5)
-
-    # plt.set_xscale('log')
+    plt.figure()
+    plt.semilogx(1/freq_array, power_array, color ='black')
+    if noise == True:
+        noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
+        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_test_all.npy')
+        noise_plus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/plus_array_sa_test_all.npy')
+        noise_minus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/minus_array_sa_test_all.npy')
+        plt.semilogx(1/noise_freq, noise, color ='grey')
+        plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', color='red', alpha=0.5)
+        plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', color='red', alpha=0.5)
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
-    plt.xlim(1,2400)
+    plt.xlim(1,1000)
     plt.show()    
 
 def fold_curve(freqarray,median,resid_file,plots=True):
@@ -806,7 +801,7 @@ def sens_analysis_per(resid_file,period,rv_amp):
         # plt.title('Period in days={0:.3f}'.format(period))
         # plt.xlim(0,100)
         # plt.show()
-    np.save('power_array_5day_10kms',big_power_array)
+    np.save('power_array_5day_10kms_add',big_power_array)
     np.save('freq_array_per_sa',freq_array)
 
 ##simple function to append the arrays together to make it easier for plotting
