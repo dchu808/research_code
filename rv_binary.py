@@ -336,8 +336,12 @@ def plot_env_2(ls_file,noise=False):
 
 def fold_curve(freqarray,median,resid_file,plots=True):
     ##plot the rv to a folded period
-    frequency = np.load(freqarray)
-    median = np.load(median)
+    # frequency = np.load(freqarray)
+    # median = np.load(median)
+    ##if the data came from just one file
+    data = np.genfromtxt(freqarray)
+    frequency = data[:,0]
+    median = data[:,1]
     ##look for the highest value
     best_freq_ind = np.argmax(median)
     best_freq = frequency[best_freq_ind]
@@ -349,7 +353,7 @@ def fold_curve(freqarray,median,resid_file,plots=True):
     peak_ind = np.zeros(0)
     peak_med = np.zeros(0)
     for i in range(1,len(median)-1):
-        if median[i] <= 0.5: ##arbitrary, hard coded cut-off right now
+        if median[i] <= 0.37: ##arbitrary, hard coded cut-off right now
             continue
         ##check to see if this frequency is a local max
         if median[i] <= median[i-1]:
@@ -371,6 +375,7 @@ def fold_curve(freqarray,median,resid_file,plots=True):
 
     ##sorting through the peak frequencies
     sid = (peak_med.argsort())[::-1]
+    ##power values
     medianSort = peak_med[sid]
     print medianSort
     freqSort = peak_freq[sid]
@@ -718,15 +723,12 @@ def sens_analysis_2_histograms(dir):
     # print max_all.shape
     ##now with this array of max power values, look into their histogram
     plt.figure()
-    # # n, bins, patches = plt.hist(max_all,bins = 26,range=(0.,.65)) ##will need to fuss with these parameters
     n, bins, patches = plt.hist(max_all,bins = 'auto')
     plt.xlabel('Max Power Value')
     plt.savefig(dir + 'max_power_hist_5day_10kms.png')
     plt.savefig(dir + 'max_power_hist_5day_10kms.pdf')
     plt.show()
-    # # print n
-    # # print bins
-    # 
+
     ##may be interesting to see the cdf as well, to figure out significance
     power_sort = np.sort(max_all)
     # 
@@ -743,6 +745,34 @@ def sens_analysis_2_histograms(dir):
     plt.savefig(dir + 'max_power_cdf.pdf')
     # plt.ylim(0,1)
     plt.show()
+
+def sens_analysis_search_cdf(dir,power_value):
+    ##want to search through a cdf, see significant a result is
+    #need to look through the arrays since they cover all simulations done for the different period ranges
+    max10 = np.load(dir + 'sens_analysis_max_power_10day.npy')
+    max100 = np.load(dir +'sens_analysis_max_power_100day.npy')
+    max1000 = np.load(dir + 'sens_analysis_max_power_1000day.npy')
+    max_all = np.zeros(len(max10))
+    # print max_all.shape
+    for j in range(len(max10)):
+        ##this will look through simiulation j, and see what was the max of each of the arrays
+        ##it will keep the max one
+        x = np.array([max10[j],max100[j],max100[j]])
+        max_all[j] = np.max(x)
+    ##if don't need to append the arrays, just use this one array
+    # max_all = np.load(dir + 'max_power_5day_10kms.npy')
+    ##mmake the cdf
+    power_sort = np.sort(max_all)
+    y_array = np.arange(power_sort.size)
+    s = float(power_sort.size) ##float is needed, otherwise next step produces 0s
+    #this way the y-axis goes from 0 - 1.
+    y_array_norm = y_array/s
+    # print y_array_norm
+    # print power_sort
+    ##given a power value, find out where it is in the cdf
+    value = power_value
+    idx = np.where(power_sort > value)[0]
+    print y_array_norm[idx[0]]
 
 ##sensativity analysis but with a periodic signal
 def sens_analysis_per(resid_file,period,rv_amp):
