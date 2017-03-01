@@ -2,7 +2,7 @@
 
 import numpy as np
 import scipy
-from scipy.optimize import leastsq,curve_fit
+from scipy.optimize import curve_fit, root, fsolve
 from scipy import stats
 import pylab
 import matplotlib.pyplot as plt
@@ -833,6 +833,93 @@ def sens_analysis_per(resid_file,period,rv_amp):
         # plt.show()
     np.save('power_array_5day_10kms_add',big_power_array)
     np.save('freq_array_per_sa',freq_array)
+
+##create an eccentric rv curve
+##this becomes much more complicated
+def sens_analysis_ecc(resid_file, period,ecc):
+    resid = np.genfromtxt(resid_file)
+    mjd = resid[:,0]
+    res = resid[:,1]
+    rverr = resid[:,2]    
+    
+    ##start with mean anomaly
+    e = ecc
+    n = 2*np.pi / period
+    ##time since periapse
+    ##for now, use the first data point as the tau point, can be changed
+    tau = mjd[0]
+    
+    ##test times
+    # test_time = np.linspace(mjd[0],mjd[-1],num=10000,endpoint=True)
+    test_time = np.linspace(52000,52010,num=1000,endpoint=True)
+    test_curve = np.zeros(len(test_time))
+    ##calculate the mean anomaly for each time point
+    mean_anomaly= n * (test_time - tau)
+    mean_anomaly_dat = n * (mjd - tau)
+    # print mean_anomaly[10]
+    ##need to now solve for eccentric anomaly
+    ecc_anomaly = np.zeros(len(mean_anomaly))
+    ecc_anomaly_dat = np.zeros(len(mean_anomaly_dat))
+    def ecc_an_solve((E), M, e):
+        z = M - (E - e * np.sin(E))
+        return z
+    for i in range(len(test_time)):
+        sol = root(ecc_an_solve,x0=(mean_anomaly[i]),args=(mean_anomaly[i],e))
+        # print sol.x[0]
+        ecc_anomaly[i] = sol.x
+    # print ecc_anomaly
+    for i in range(len(mjd)):
+        sol = root(ecc_an_solve,x0=(mean_anomaly_dat[i]),args=(mean_anomaly_dat[i],e))
+        ecc_anomaly_dat[i] = sol.x
+    ##testing a fake rv curve
+    # a = .234 * u.AU ##hardcode this for now, comes from Kepler's laws with 5 day period, ~20Musn total mass. yields very high amplitude...
+    a = 0.05 * u.AU ##trying this out, just to lower the amplitude a bit
+    p = period * u.day
+    k = np.sin(np.pi / 2) ##sin i term
+    omega = np.pi / 3.
+    # omega = 0.
+    # print np.sin(i)
+    # print a
+    test_curve = np.zeros(len(mean_anomaly))
+    fake_curve = np.zeros(len(mean_anomaly_dat))
+    fake_curve_werror = np.zeros(len(mean_anomaly_dat))
+    for i in range(len(test_curve)):
+        ##part 1 of the RV function
+        x = (2 * np.pi * a * k) / p
+        ##part 2 of the RV function
+        y = (np.sqrt(1 - e**2) * np.cos(ecc_anomaly[i]) * np.cos(omega) - np.sin(ecc_anomaly[i]) * np.sin(omega))/ (1 - e * np.cos(ecc_anomaly[i]))
+        z = x * y
+        rv = z.to(u.km/u.s)
+        test_curve[i] = rv.value
+    for i in range(len(fake_curve)):
+        ##part 1 of the RV function
+        x = (2 * np.pi * a * k) / p
+        ##part 2 of the RV function
+        y = (np.sqrt(1 - e**2) * np.cos(ecc_anomaly_dat[i]) * np.cos(omega) - np.sin(ecc_anomaly_dat[i]) * np.sin(omega))/ (1 - e * np.cos(ecc_anomaly_dat[i]))
+        z = x * y
+        rv = z.to(u.km/u.s)
+        fake_curve[i] = rv.value
+        fake_curve_werror[i] = np.random.normal(rv.value,rverr[i])
+    ##plot the function to see if it works
+    # print rv_curve
+    # print test_time.size
+    plt.figure()
+    plt.plot(test_time,test_curve)
+    # plt.xlim(52000,52010)
+    plt.show()
+
+    plt.figure()
+    plt.errorbar(mjd,fake_curve_werror,rverr,fmt='o',color='black')
+    plt.show()
+
+    ##lomb scargle test
+    # freq_array = np.linspace(0.005,1.,30000)
+    # frequency, power = LombScargle(test_time,test_curve).autopower(minimum_frequency=0.005,maximum_frequency=1.,samples_per_peak=2.)
+    frequency, power = LombScargle(mjd,fake_curve_werror,rverr).autopower(minimum_frequency=0.005,maximum_frequency=1.,samples_per_peak=2.)
+    plt.figure()
+    plt.plot(1/frequency,power, color = 'black')
+    plt.axvline(x=period,linestyle='--',color='red')
+    plt.show()
 
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
