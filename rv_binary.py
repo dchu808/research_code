@@ -298,6 +298,7 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
         plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', color='red', alpha=0.5)
     # plt.set_xscale('log')
     # plt.axvline(x=1.084,linestyle='--',color='red')
+    plt.axhline(y=0.5037) ##value came from non-periodic sensitivity analysis, using function sens_analysis_search_cdf
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
@@ -331,6 +332,7 @@ def plot_env_2(ls_file,noise=False):
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
+    plt.axhline(y=0.5037,color='black',linestyle='--') ##value came from non-periodic sensitivity analysis, using function sens_analysis_search_cdf
     plt.xlim(1,1000)
     plt.show()    
 
@@ -773,6 +775,10 @@ def sens_analysis_search_cdf(dir,power_value):
     value = power_value
     idx = np.where(power_sort > value)[0]
     print y_array_norm[idx[0]]
+    ##look for the 3 sigma value
+    idx3sig = np.where(y_array_norm > 0.9973)[0]
+    print idx3sig[0]
+    print power_sort[idx3sig[0]]
 
 ##sensativity analysis but with a periodic signal
 def sens_analysis_per(resid_file,period,rv_amp):
