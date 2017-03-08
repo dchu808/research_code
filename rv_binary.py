@@ -678,7 +678,7 @@ def sens_analysis(rv_file,min_freq,max_freq):
 ##this time, want to ask what is the highest peaks of power
 ##make histogram of peak power values
 ##look into the power array produced from previous sens_analysis function
-def sens_analysis_2(power_array):
+def sens_analysis_max_power(power_array):
     power_array = np.load(power_array)
     ##go through the power file, need to look at each simulation one at a time
     ##for each simulation, take the max power
@@ -713,6 +713,21 @@ def sens_analysis_2_histograms(dir):
     plt.savefig(dir + 'max_power_hist_5day_10kms.png')
     plt.savefig(dir + 'max_power_hist_5day_10kms.pdf')
     plt.show()
+    np.save('sens_analysis_max_power',max_power_array)
+
+def sens_analysis_power_histograms():
+    ##need to append the arrays to they cover all simulations done for the different period ranges
+    max10 = np.load('sens_analysis_max_power_10day.npy')
+    max100 = np.load('sens_analysis_max_power_100day.npy')
+    max1000 = np.load('sens_analysis_max_power_1000day.npy')
+    max_all = np.append(max10,[max100, max1000])
+    ##now with this array of max power values, look into their histogram
+    plt.figure()
+    n, bins, patches = plt.hist(max_all,bins = 13,range=(0.,.65)) ##will need to fuss with these parameters
+    plt.xlabel('Max Power Value')
+    plt.show()
+    # print n
+    # print bins
 
     ##may be interesting to see the cdf as well, to figure out significance
     power_sort = np.sort(max_all)
