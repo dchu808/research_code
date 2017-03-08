@@ -230,28 +230,11 @@ def envelope_cdf_no_weights(freqarray,powerarray):
         ##normalizes the sorted array. This ensures they all add to 1
         cdf = np.cumsum(power_sort)/np.sum(col)
         # print cdf[-1]
-        ##Determine points for median, +/- 3 sigma
-        # print power_sort[idxm][0]
-        # print power_sort[idx3m][0]
-        # print power_sort[idx3p][0]
-
-        # sid = (power_norm.argsort())[::-1] # indices for a reverse sort
-        # sid = (power_norm.argsort())
-        # powerSort = power_norm[sid]
-        ##sort the original power array - should be the same as powerSort, but not normalized
-        # powerSort_not_norm = power[sid]
-        
-        ##cdf
-        # cdf = np.cumsum(powerSort)
         
         ##Determine indecies for median, +/- 3 sigma in the cdf
         idxm = (np.where(cdf > 0.5))[0] #median
         idx3m = (np.where(cdf > 0.0027))[0] #3 sigma minus
         idx3p = (np.where(cdf > 0.9973))[0] #3 sigma plus
-        
-        # median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
-        # level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
-        # level1p = bin_edges[idx1p[0]] + 0.5*(bin_edges[1]-bin_edges[0])
         
         ##instead of looking through the bin edges of histogram, simply look at power value the indices give
         ##in the sorted power array
