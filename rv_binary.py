@@ -2,12 +2,13 @@
 
 import numpy as np
 import scipy
-from scipy.optimize import leastsq,curve_fit
+from scipy.optimize import curve_fit, root, fsolve
 from scipy import stats
 import pylab
 import matplotlib.pyplot as plt
 import asciidata
 import efit5_util_final
+from astropy.stats import LombScargle
 from astropy.table import Table, Column, MaskedColumn
 from astropy.io import ascii
 import astropy.units as u
@@ -146,6 +147,7 @@ def envelope_cdf(freqarray,powerarray,weights_array):
     ##go through the power file one line at a time to make cdfs
     ##Each value in one row has a weight value attached to it as well
     for j in tqdm(range(len(freq_array))):
+    # for j in range(1):
         ##each column is the power of a particular frequency. Read through columns
         col = power_array[:,j]
         ##want to take cdf of this column
@@ -153,42 +155,46 @@ def envelope_cdf(freqarray,powerarray,weights_array):
         power,bin_edges = np.histogram(col,bins=10000,normed=False,weights=weights)
         # print power
         ##start cdf process, normalize
-        power_norm = np.array(power, dtype=float) / power.sum()
+        # power_norm = np.array(power, dtype=float) / power.sum()
+        # print power_norm
         
         # sid = (power_norm.argsort())[::-1] # indices for a reverse sort
-        sid = (power_norm.argsort())
-        powerSort = power_norm[sid]
+        # sid = (power_norm.argsort())
+        sid = (power.argsort())
+        # powerSort = power_norm[sid] ##this is now normalized
+        powerSort = power[sid]
+        # print powerSort
         ##sort the original power array - should be the same as powerSort, but not normalized
         # powerSort_not_norm = power[sid]
         
         ##cdf
-        cdf = np.cumsum(powerSort)
+        cdf = np.cumsum(powerSort) ##this was an extra step that threw off normalization
+        # print cdf
         
         ##Determine points for median, +/- 1 sigma
         idxm = (np.where(cdf > 0.5))[0] #median
         idx1m = (np.where(cdf > 0.3173))[0] #1 sigma minus
         idx1p = (np.where(cdf > 0.6827))[0] #1 sigma plus
+        # print idxm[0]
+        # print idx1m[0]
+        # print idx1p[0]
         
-        median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
+        median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0])
         level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
         level1p = bin_edges[idx1p[0]] + 0.5*(bin_edges[1]-bin_edges[0])
-
-        # median = powerSort[idxm[0]]
-        # level1m = powerSort[idx1m[0]]
-        # level1p = powerSort[idx1p[0]]
-        ##Use the original power values
-        # median = powerSort_not_norm[idxm]
-        # level1m = powerSort_not_norm[idx1m]
-        # level1p = powerSort_not_norm[idx1p]
+        # print median
+        # print level1m
+        # print level1p
+        # print bin_edges
 
         ##write these values to arrays
         median_array[j] = median
         minus_array[j] = level1m
         plus_array[j] = level1p
     
-    np.save('median_array', median_array)
-    np.save('minus_array', minus_array)
-    np.save('plus_array', plus_array)
+    np.save('median_array_1000day', median_array)
+    np.save('minus_array_1000day', minus_array)
+    np.save('plus_array_1000day', plus_array)
 
 ##envelope cdf but no weights. For sensativity analysis
 def envelope_cdf_no_weights(freqarray,powerarray):
@@ -210,36 +216,40 @@ def envelope_cdf_no_weights(freqarray,powerarray):
         col = power_array[:,j]
         ##want to take cdf of this column
         ##start take by making a histogram
-        power,bin_edges = np.histogram(col,bins=10000,normed=False)
+        # power,bin_edges = np.histogram(col,bins=10000,normed=False)
         ##start cdf process, normalize
-        power_norm = np.array(power, dtype=float) / power.sum()
+        # power_norm = np.array(power, dtype=float) / power.sum()
         
-        # sid = (power_norm.argsort())[::-1] # indices for a reverse sort
-        sid = (power_norm.argsort())
-        powerSort = power_norm[sid]
-        ##sort the original power array - should be the same as powerSort, but not normalized
-        # powerSort_not_norm = power[sid]
+        ##trying new way to handle histogram, in this case.
+        ##this is all for one frequency, so we are only concerned with sorting the power values
+        ##then, can figure out the significance by looking at normalized cdf, skip binning process from histogram function
+        ##don't need to worry about weighting the cdf, which is why np.histogram function was used previously
+        power_sort = np.sort(col)
+        # print power_sort[-1]
+
+        ##normalizes the sorted array. This ensures they all add to 1
+        cdf = np.cumsum(power_sort)/np.sum(col)
+        # print cdf[-1]
         
-        ##cdf
-        cdf = np.cumsum(powerSort)
-        
-        ##Determine points for median, +/- 3 sigma
+        ##Determine indecies for median, +/- 3 sigma in the cdf
         idxm = (np.where(cdf > 0.5))[0] #median
-        idx1m = (np.where(cdf > 0.0027))[0] #3 sigma minus
-        idx1p = (np.where(cdf > 0.9973))[0] #3 sigma plus
+        idx3m = (np.where(cdf > 0.0027))[0] #3 sigma minus
+        idx3p = (np.where(cdf > 0.9973))[0] #3 sigma plus
         
-        median = bin_edges[idxm[0]] + 0.5*(bin_edges[1]-bin_edges[0]) ##is this last part appropriate?
-        level1m = bin_edges[idx1m[0]] + 0.5*(bin_edges[1]-bin_edges[0])
-        level1p = bin_edges[idx1p[0]] + 0.5*(bin_edges[1]-bin_edges[0])
+        ##instead of looking through the bin edges of histogram, simply look at power value the indices give
+        ##in the sorted power array
+        median = power_sort[idxm][0]
+        level3m = power_sort[idx3m][0]
+        level3p = power_sort[idx3p][0]
 
         ##write these values to arrays
         median_array[j] = median
-        minus_array[j] = level1m
-        plus_array[j] = level1p
+        minus_array[j] = level3m
+        plus_array[j] = level3p
     
-    np.save('median_array', median_array)
-    np.save('minus_array', minus_array)
-    np.save('plus_array', plus_array)
+    np.save('median_array_5day_10kms_add', median_array)
+    np.save('minus_array_5day_10kms_add', minus_array)
+    np.save('plus_array_5day_10kms_add', plus_array)
     
 def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     ##make a plot of the Lomb Scargle, plotting median power, +/- 1 sigma
@@ -259,24 +269,25 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     plt.semilogx(1/frequency, median, color ='black')
     # plt.semilogx(1/frequency, minus, color ='gray',alpha=.5)
     # plt.plot(1/frequency,median,alpha=0)
-    # plt.fill_between(1/frequency,median,plus,facecolor='yellow', alpha=0.5)
-    # plt.fill_between(1/frequency,minus,median,facecolor='yellow', alpha=0.5)
+    plt.fill_between(1/frequency,median,plus,facecolor='yellow', color='yellow',alpha=0.5)
+    plt.fill_between(1/frequency,minus,median,facecolor='yellow', color='yellow',alpha=0.5)
     if noise == True:
         noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
-        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_check_all.npy')
-        noise_plus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/plus_array_sa_check_all.npy')
-        noise_minus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/minus_array_sa_check_all.npy')
+        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_test_all.npy')
+        noise_plus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/plus_array_sa_test_all.npy')
+        noise_minus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/minus_array_sa_test_all.npy')
         plt.semilogx(1/noise_freq, noise, color ='grey')
-        plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', alpha=0.5)
-        plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', alpha=0.5)
+        plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', color='red', alpha=0.5)
+        plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', color='red', alpha=0.5)
     # plt.set_xscale('log')
-    plt.axvline(x=1.084,linestyle='--',color='red')
+    # plt.axvline(x=1.084,linestyle='--',color='red')
+    plt.axhline(y=0.5037) ##value came from non-periodic sensitivity analysis, using function sens_analysis_search_cdf
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
     #plt.xlim(0,30)
-    # plt.xlim(1,1000)
-    plt.xlim(1.07,1.1) ##individually focus around peaks
+    plt.xlim(1,200)
+    # plt.xlim(1.07,1.1) ##individually focus around peaks
     plt.show()
 
     # plt.semilogx(1/frequency, median - minus, color ='black')
@@ -285,37 +296,37 @@ def plot_env(freqarray,median,plus_env,minus_env,noise=False):
     # plt.semilogx(1/frequency, plus - median, color ='black')
     # plt.show()
 
-def plot_env_2(freqarray_1,median_1,plus_env_1,minus_env_1,freqarray_2,median_2,plus_env_2,minus_env_2):
-    ##basically combining 2 plot env to expand frequency range
-    frequency_1 = np.load(freqarray_1)
-    median_1 = np.load(median_1)
-    plus_1 = np.load(plus_env_1)
-    minus_1 = np.load(minus_env_1)
+def plot_env_2(ls_file,noise=False):
+    ##plotting the lomb scargle file from the best fit model with/without noise
+    data = np.genfromtxt(ls_file)
+    freq_array = data[:,0]
+    power_array = data[:,1]
 
-    frequency_2 = np.load(freqarray_2)
-    median_2 = np.load(median_2)
-    plus_2 = np.load(plus_env_2)
-    minus_2 = np.load(minus_env_2)
-
-    plt.semilogx(1/frequency_1,median_1,alpha=0)
-    plt.fill_between(1/frequency_1,median_1,plus_1,facecolor='yellow', alpha=0.5)
-    plt.fill_between(1/frequency_1,minus_1,median_1,facecolor='yellow', alpha=0.5)
-
-    plt.semilogx(1/frequency_2,median_2,alpha=0)
-    plt.fill_between(1/frequency_2,median_2,plus_2,facecolor='yellow', alpha=0.5)
-    plt.fill_between(1/frequency_2,minus_2,median_2,facecolor='yellow', alpha=0.5)
-
-    # plt.set_xscale('log')
+    plt.figure()
+    plt.semilogx(1/freq_array, power_array, color ='black')
+    if noise == True:
+        noise_freq = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/freq_array_sa_all.npy')
+        noise = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/median_array_sa_test_all.npy')
+        noise_plus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/plus_array_sa_test_all.npy')
+        noise_minus = np.load('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/Sensitivity_Analysis/minus_array_sa_test_all.npy')
+        plt.semilogx(1/noise_freq, noise, color ='grey')
+        plt.fill_between(1/noise_freq,noise,noise_plus,facecolor='red', color='red', alpha=0.5)
+        plt.fill_between(1/noise_freq,noise_minus,noise,facecolor='red', color='red', alpha=0.5)
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
     # plt.ylim(0,1.5)
-    plt.xlim(1,2400)
+    plt.axhline(y=0.5037,color='black',linestyle='--') ##value came from non-periodic sensitivity analysis, using function sens_analysis_search_cdf
+    plt.xlim(1,1000)
     plt.show()    
 
 def fold_curve(freqarray,median,resid_file,plots=True):
     ##plot the rv to a folded period
-    frequency = np.load(freqarray)
-    median = np.load(median)
+    # frequency = np.load(freqarray)
+    # median = np.load(median)
+    ##if the data came from just one file
+    data = np.genfromtxt(freqarray)
+    frequency = data[:,0]
+    median = data[:,1]
     ##look for the highest value
     best_freq_ind = np.argmax(median)
     best_freq = frequency[best_freq_ind]
@@ -327,7 +338,7 @@ def fold_curve(freqarray,median,resid_file,plots=True):
     peak_ind = np.zeros(0)
     peak_med = np.zeros(0)
     for i in range(1,len(median)-1):
-        if median[i] <= 0.5: ##arbitrary, hard coded cut-off right now
+        if median[i] <= 0.37: ##arbitrary, hard coded cut-off right now
             continue
         ##check to see if this frequency is a local max
         if median[i] <= median[i-1]:
@@ -349,6 +360,7 @@ def fold_curve(freqarray,median,resid_file,plots=True):
 
     ##sorting through the peak frequencies
     sid = (peak_med.argsort())[::-1]
+    ##power values
     medianSort = peak_med[sid]
     print medianSort
     freqSort = peak_freq[sid]
@@ -453,7 +465,7 @@ def CL_vmax(resid_file):
             b[j] = sample[1]
         vmax_array = np.sqrt(a**2 + b**2)
         # vmax_n, vmax_minmax, vmax_mean, vmax_var, vmax_skew, vmax_kurt = scipy.stats.describe(vmax_array)
-        vmax_mean, vmax_std = vmax_array.mean(), vmax_array.std(ddof=1)
+        vmax_mean, vmax_std = vmax_array.mean(), vmax_array.std(ddof=1) ##maybe ddof should be different?
         # vmax_std = np.sqrt(vmax_var)
         ##get confidence level
         # CL_vmax = stats.norm.interval(0.95,loc=vmax_mean,scale=vmax_std/np.sqrt(n))
@@ -469,14 +481,18 @@ def CL_vmax(resid_file):
     data = Table([period_array,CL_array])
     ascii.write(data, 'period_vmax.dat')
 
-def vmax_period_plot(cl_array):
-    cl = np.load(cl_array)
-    period_array = np.arange(1.,100.,.1) 
+def vmax_period_plot(cl_file):
+    # cl = np.load(cl_array)
+    # period_array = np.arange(1.,100.,.1)
+    data = np.genfromtxt(cl_file)
+    period_array = data[:,0]
+    cl = data[:,1]
     plt.figure()
     plt.plot(period_array,cl)
     plt.xlabel('Period (Days)')
     plt.ylabel('95% CL upper limit on Amplitude (km/s)')
-    # plt.ylim(14,36)
+    plt.ylim(14,36)
+    plt.xlim(1.,130.)
     plt.show()
     
 def make_model(orbit_params,tmin=1995.0,tmax=2018.0,increment=0.005):
@@ -587,28 +603,24 @@ def make_rv_resid_file(rv_file,model_file,star):
     output.close()
 
 ##lomb scargle process
-def lombscargle_file(resid_file):
-    data = np.genfromtxt(resid_file, names=['rvmjd','resid','rverr'])
-    # print
-    # print len(data)
-    mjd = np.zeros(len(data))
-    resid = np.zeros(len(data))
-    rverr = np.zeros(len(data))
-    for i in range(len(data)):
-        mjd[i] = data[i][0]
-        resid[i] = data[i][1]
-        rverr[i] = data[i][2]
-    # print mjd
+def lombscargle_file(resid_file,output=False):
+    data = np.genfromtxt(resid_file)
+    mjd = data[:,0]
+    resid = data[:,1]
+    rverr = data[:,2]
     # mjd_days = mjd * u.day
     ##maximum frequency works out to about 1000 day period
     frequency, power = LombScargle(mjd,resid,rverr).autopower(minimum_frequency=0.001,maximum_frequency=1.,samples_per_peak=2.,method='fast')
-    print len(frequency)
+    # print len(frequency)
     #plt.plot(1./frequency, power)
     plt.semilogx(1./frequency, power, color='black')
     plt.xlabel('Period (Days)')
     plt.ylabel('Power')
-    plt.xlim(0,10)
+    plt.xlim(0,1000)
     plt.show()
+    if output == True:
+        data = Table([frequency, power], names = ['frequency','power'])
+        ascii.write(data,'LS_output.dat')
 
 def lombscargle(mjd,resid,rverr,min_freq,max_freq):
     ##maximum frequency of .001 works out to about 1000 day period
@@ -676,6 +688,31 @@ def sens_analysis_max_power(power_array):
         row = power_array[j,:]
         max_power = np.max(row)
         max_power_array[j] = max_power
+    np.save('max_power_5day_10kms',max_power_array)
+
+def sens_analysis_2_histograms(dir):
+    ##need to look through the arrays since they cover all simulations done for the different period ranges
+    # max10 = np.load(dir + 'sens_analysis_max_power_10day.npy')
+    # max100 = np.load(dir +'sens_analysis_max_power_100day.npy')
+    # max1000 = np.load(dir + 'sens_analysis_max_power_1000day.npy')
+    # max_all = np.zeros(len(max10))
+    # # print max_all.shape
+    # for j in range(len(max10)):
+    #     ##this will look through simiulation j, and see what was the max of each of the arrays
+    #     ##it will keep the max one
+    #     x = np.array([max10[j],max100[j],max100[j]])
+    #     max_all[j] = np.max(x)
+    ##if don't need to append the arrays, just use this one array
+    max_all = np.load(dir + 'max_power_5day_10kms.npy')
+    # print max_all
+    # print max_all.shape
+    ##now with this array of max power values, look into their histogram
+    plt.figure()
+    n, bins, patches = plt.hist(max_all,bins = 'auto')
+    plt.xlabel('Max Power Value')
+    plt.savefig(dir + 'max_power_hist_5day_10kms.png')
+    plt.savefig(dir + 'max_power_hist_5day_10kms.pdf')
+    plt.show()
     np.save('sens_analysis_max_power',max_power_array)
 
 def sens_analysis_power_histograms():
@@ -694,41 +731,222 @@ def sens_analysis_power_histograms():
 
     ##may be interesting to see the cdf as well, to figure out significance
     power_sort = np.sort(max_all)
-
+    # 
     y_array = np.arange(power_sort.size)
     s = float(power_sort.size) ##float is needed, otherwise next step produces 0s
-    ##this way the y-axis goes from 0 - 1.
+    #this way the y-axis goes from 0 - 1.
     y_array_norm = y_array/s
     plt.figure()
     # plt.step(power_sort, np.arange(power_sort.size))
     plt.step(power_sort, y_array_norm)
     plt.xlabel('Max Power Value')
     plt.ylabel('CDF')
+    plt.savefig(dir + 'max_power_cdf.png')
+    plt.savefig(dir + 'max_power_cdf.pdf')
     # plt.ylim(0,1)
+    plt.show()
+
+def sens_analysis_search_cdf(dir,power_value):
+    ##want to search through a cdf, see significant a result is
+    #need to look through the arrays since they cover all simulations done for the different period ranges
+    max10 = np.load(dir + 'sens_analysis_max_power_10day.npy')
+    max100 = np.load(dir +'sens_analysis_max_power_100day.npy')
+    max1000 = np.load(dir + 'sens_analysis_max_power_1000day.npy')
+    max_all = np.zeros(len(max10))
+    # print max_all.shape
+    for j in range(len(max10)):
+        ##this will look through simiulation j, and see what was the max of each of the arrays
+        ##it will keep the max one
+        x = np.array([max10[j],max100[j],max100[j]])
+        max_all[j] = np.max(x)
+    ##if don't need to append the arrays, just use this one array
+    # max_all = np.load(dir + 'max_power_5day_10kms.npy')
+    ##mmake the cdf
+    power_sort = np.sort(max_all)
+    y_array = np.arange(power_sort.size)
+    s = float(power_sort.size) ##float is needed, otherwise next step produces 0s
+    #this way the y-axis goes from 0 - 1.
+    y_array_norm = y_array/s
+    # print y_array_norm
+    # print power_sort
+    ##given a power value, find out where it is in the cdf
+    value = power_value
+    idx = np.where(power_sort > value)[0]
+    print y_array_norm[idx[0]]
+    ##look for the 3 sigma value
+    idx3sig = np.where(y_array_norm > 0.9973)[0]
+    print idx3sig[0]
+    print power_sort[idx3sig[0]]
+
+##sensativity analysis but with a periodic signal
+def sens_analysis_per(resid_file,period,rv_amp):
+    ##read in the resid file to get times
+    resid = np.genfromtxt(resid_file)
+    mjd = resid[:,0]
+    res = resid[:,1]
+    rverr = resid[:,2]
+    ##fold curve to period as a check
+    freq = 1./period ##period in days
+    w = 2. * np.pi / period
+    freq_array = np.linspace(0.005,1.,30000)
+    ##want to run this sensativity n times
+    n = 100000 ##set this manually
+    big_power_array = np.zeros((n,len(freq_array)))
+    for k in tqdm(range(n)):
+    
+        ##generating a fake sine signal for now
+        # fake_curve = np.zeros(len(mjd))
+        fake_curve_werror = np.zeros(len(mjd))
+        for i in range(len(mjd)):
+            ##sample the point in our observations in this fake curve
+            x = rv_amp * np.sin(w*mjd[i]) + rv_amp * np.cos(w*mjd[i])
+            # fake_curve[i] = x
+            ##also create fake curve with points shifted by error
+            fake_curve_werror[i] = np.random.normal(x,rverr[i])
+            ##want to add this fake curve onto the current residual
+            fake_curve_werror[i] = np.random.normal(res[i] + x,rverr[i])
+        ##plot curve to see if it makes sense
+        # test_time = np.linspace(np.min(mjd),np.max(mjd),num=1000,endpoint=True)
+        # test_curve = np.zeros(len(test_time))
+        # ##test fake curve
+        # for i in range(len(test_time)):
+        #             ##sample the point in our observations in this fake curve
+        #             y = rv_amp * np.sin(w*test_time[i]) + rv_amp * np.cos(w*test_time[i])
+        #             test_curve[i] = y    
+    # plt.figure()
+    # # plt.errorbar(mjd,fake_curve,rverr,fmt='o',color='black')
+    # plt.errorbar(mjd,fake_curve_werror,rverr,fmt='o',color='black')
+    # plt.plot(test_time,test_curve)
+    # plt.xlabel('MJD')
+    # plt.ylabel('Residual (km/s)')
+    # plt.title('Period in days={0:.3f}'.format(period))
+    # plt.show()
+
+        ##Lomb-Scargle Test
+        # frequency, power = LombScargle(mjd,fake_curve,rverr).autopower(minimum_frequency=0.01,maximum_frequency=1.,samples_per_peak=2.)
+        # frequency, power = LombScargle(mjd,fake_curve_werror,rverr).autopower(minimum_frequency=0.01,maximum_frequency=1.,samples_per_peak=2.)
+        # frequency = np.linspace(0.005,1.,30000)
+        power = LombScargle(mjd,fake_curve_werror,rverr).power(freq_array,method='fast')
+        big_power_array[k] = power
+        # plt.semilogx(1./frequency, power, color='black')
+        # plt.axvline(x=period,linestyle='--',color='red')
+        # plt.xlabel('Period (Days)')
+        # plt.ylabel('Power')
+        # plt.title('Period in days={0:.3f}'.format(period))
+        # plt.xlim(0,100)
+        # plt.show()
+    np.save('power_array_5day_10kms_add',big_power_array)
+    np.save('freq_array_per_sa',freq_array)
+
+##create an eccentric rv curve
+##this becomes much more complicated
+def sens_analysis_ecc(resid_file, period,ecc):
+    resid = np.genfromtxt(resid_file)
+    mjd = resid[:,0]
+    res = resid[:,1]
+    rverr = resid[:,2]    
+    
+    ##start with mean anomaly
+    e = ecc
+    n = 2*np.pi / period
+    ##time since periapse
+    ##for now, use the first data point as the tau point, can be changed
+    tau = mjd[0]
+    
+    ##test times
+    # test_time = np.linspace(mjd[0],mjd[-1],num=10000,endpoint=True)
+    test_time = np.linspace(52000,52010,num=1000,endpoint=True)
+    test_curve = np.zeros(len(test_time))
+    ##calculate the mean anomaly for each time point
+    mean_anomaly= n * (test_time - tau)
+    mean_anomaly_dat = n * (mjd - tau)
+    # print mean_anomaly[10]
+    ##need to now solve for eccentric anomaly
+    ecc_anomaly = np.zeros(len(mean_anomaly))
+    ecc_anomaly_dat = np.zeros(len(mean_anomaly_dat))
+    def ecc_an_solve((E), M, e):
+        z = M - (E - e * np.sin(E))
+        return z
+    for i in range(len(test_time)):
+        sol = root(ecc_an_solve,x0=(mean_anomaly[i]),args=(mean_anomaly[i],e))
+        # print sol.x[0]
+        ecc_anomaly[i] = sol.x
+    # print ecc_anomaly
+    for i in range(len(mjd)):
+        sol = root(ecc_an_solve,x0=(mean_anomaly_dat[i]),args=(mean_anomaly_dat[i],e))
+        ecc_anomaly_dat[i] = sol.x
+    ##testing a fake rv curve
+    # a = .234 * u.AU ##hardcode this for now, comes from Kepler's laws with 5 day period, ~20Musn total mass. yields very high amplitude...
+    a = 0.05 * u.AU ##trying this out, just to lower the amplitude a bit
+    p = period * u.day
+    k = np.sin(np.pi / 2) ##sin i term
+    omega = np.pi / 3.
+    # omega = 0.
+    # print np.sin(i)
+    # print a
+    test_curve = np.zeros(len(mean_anomaly))
+    fake_curve = np.zeros(len(mean_anomaly_dat))
+    fake_curve_werror = np.zeros(len(mean_anomaly_dat))
+    for i in range(len(test_curve)):
+        ##part 1 of the RV function
+        x = (2 * np.pi * a * k) / p
+        ##part 2 of the RV function
+        y = (np.sqrt(1 - e**2) * np.cos(ecc_anomaly[i]) * np.cos(omega) - np.sin(ecc_anomaly[i]) * np.sin(omega))/ (1 - e * np.cos(ecc_anomaly[i]))
+        z = x * y
+        rv = z.to(u.km/u.s)
+        test_curve[i] = rv.value
+    for i in range(len(fake_curve)):
+        ##part 1 of the RV function
+        x = (2 * np.pi * a * k) / p
+        ##part 2 of the RV function
+        y = (np.sqrt(1 - e**2) * np.cos(ecc_anomaly_dat[i]) * np.cos(omega) - np.sin(ecc_anomaly_dat[i]) * np.sin(omega))/ (1 - e * np.cos(ecc_anomaly_dat[i]))
+        z = x * y
+        rv = z.to(u.km/u.s)
+        fake_curve[i] = rv.value
+        fake_curve_werror[i] = np.random.normal(rv.value,rverr[i])
+    ##plot the function to see if it works
+    # print rv_curve
+    # print test_time.size
+    plt.figure()
+    plt.plot(test_time,test_curve)
+    # plt.xlim(52000,52010)
+    plt.show()
+
+    plt.figure()
+    plt.errorbar(mjd,fake_curve_werror,rverr,fmt='o',color='black')
+    plt.show()
+
+    ##lomb scargle test
+    # freq_array = np.linspace(0.005,1.,30000)
+    # frequency, power = LombScargle(test_time,test_curve).autopower(minimum_frequency=0.005,maximum_frequency=1.,samples_per_peak=2.)
+    frequency, power = LombScargle(mjd,fake_curve_werror,rverr).autopower(minimum_frequency=0.005,maximum_frequency=1.,samples_per_peak=2.)
+    plt.figure()
+    plt.plot(1/frequency,power, color = 'black')
+    plt.axvline(x=period,linestyle='--',color='red')
     plt.show()
 
 ##simple function to append the arrays together to make it easier for plotting
 ##these are hard-coded for now
 def array_append(dir):
-    freq_1 = np.load(dir + 'freq_array_sa.npy')
-    freq_2 = np.load(dir + 'freq_array_sa_100day.npy')
-    freq_3 = np.load(dir + 'freq_array_sa_1000day.npy')
-    # freq_4 = np.load(dir + 'freq_array_sa_2400day.npy')
+    freq_1 = np.load(dir + 'freq_array.npy')
+    freq_2 = np.load(dir + 'freq_array_100day.npy')
+    freq_3 = np.load(dir + 'freq_array_1000day.npy')
+    # freq_4 = np.load(dir + 'freq_array_2400day.npy')
     
-    med_1 = np.load(dir + 'median_array_sa_check.npy')
-    med_2 = np.load(dir + 'median_array_sa_100day_check.npy')
-    med_3 = np.load(dir + 'median_array_sa_1000day_check.npy')
-    # med_4 = np.load(dir + 'median_array_sa_2400day.npy')
+    med_1 = np.load(dir + 'median_array_10day.npy')
+    med_2 = np.load(dir + 'median_array_100day.npy')
+    med_3 = np.load(dir + 'median_array_1000day.npy')
+    # med_4 = np.load(dir + 'median_array_2400day.npy')
     
-    plus_1 = np.load(dir + 'plus_array_sa_check.npy')
-    plus_2 = np.load(dir + 'plus_array_sa_100day_check.npy')
-    plus_3 = np.load(dir + 'plus_array_sa_1000day_check.npy')
-    # plus_4 = np.load(dir + 'plus_array_sa_2400day.npy')
+    plus_1 = np.load(dir + 'plus_array_10day.npy')
+    plus_2 = np.load(dir + 'plus_array_100day.npy')
+    plus_3 = np.load(dir + 'plus_array_1000day.npy')
+    # plus_4 = np.load(dir + 'plus_array_2400day.npy')
     
-    minus_1 = np.load(dir + 'minus_array_sa_check.npy')
-    minus_2 = np.load(dir + 'minus_array_sa_100day_check.npy')
-    minus_3 = np.load(dir + 'minus_array_sa_1000day_check.npy')
-    # minus_4 = np.load(dir + 'minus_array_sa_2400day.npy')
+    minus_1 = np.load(dir + 'minus_array_10day.npy')
+    minus_2 = np.load(dir + 'minus_array_100day.npy')
+    minus_3 = np.load(dir + 'minus_array_1000day.npy')
+    # minus_4 = np.load(dir + 'minus_array_2400day.npy')
     
     ##flip the arrays for plotting
     freq_1_flip = freq_1[::-1]
@@ -763,10 +981,10 @@ def array_append(dir):
     complete_minus = np.append(minus_1_flip, [minus_2_flip, minus_3_flip])
     
     ##save arrays
-    np.save('freq_array_sa_check_all', complete_freq)
-    np.save('median_array_sa_check_all', complete_med)
-    np.save('plus_array_sa_check_all', complete_plus)
-    np.save('minus_array_sa_check_all', complete_minus)
+    np.save('freq_array_all', complete_freq)
+    np.save('median_array_all', complete_med)
+    np.save('plus_array_all', complete_plus)
+    np.save('minus_array_all', complete_minus)
     
 ##turn an input of period and velocity max to mass of binary
 ##equation is binary mass equation
@@ -834,7 +1052,7 @@ def mass_period_calc(file_path,mass_tot):
     ##write out data file
     data = Table([period_array,binary_mass_array,m_ratio], names = ['period','mass','m1/mtot'])
     ascii.write(data,'mass_values.dat')
-def mass_period_plot(file_path):    
+def mass_period_plot(file_path,hill_limit=False):    
     ##make plot of period vs companion mass
     ##load the data
     info = np.genfromtxt(file_path)
@@ -843,17 +1061,27 @@ def mass_period_plot(file_path):
     mass_ratio = info[:,2]
 
     ##for comparison sake
-    # info2 = np.genfromtxt('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/mass_values_20.dat')
+    # info2 = np.genfromtxt('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/mass_values_20msun.dat')
     # period_array2 = info2[:,0]
     # mass_comp2 = info2[:,1]
     # mass_ratio2 = info2[:,2]
     
     plt.figure()
-    plt.plot(period_array,mass_ratio, label='15Msun')
+    plt.plot(period_array,mass_ratio, label='14.1Msun')
     # plt.plot(period_array2,mass_ratio2, label='20Msun')
+    if hill_limit == True:
+        t = 119.1 ##this is the 119.1 day limit from Hill radius for case where all mass is S0-2
+        # plt.plot(period_array,1. - period_array**2/t**2,color = 'black')
+        plt.fill_between(period_array,1. - period_array**2/t**2,.5,color = 'red',alpha=1.)
     plt.xlabel('Period (Days)')
     plt.ylabel('Mass Ratio Sin i')
+    plt.xlim(1.,150.)
+    plt.ylim(0.,.4)
     plt.legend()
+    plt.savefig('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/period_massratio_hill.png')
+    plt.savefig('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/period_massratio_hill.pdf')
+    # plt.savefig('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/period_massratio_compare_2.png')
+    # plt.savefig('/u/devinchu/efits_binary_investigation/efit_boehle_2016/rv_binary/period_massratio_compare_2.pdf')
     plt.show()
 
 ##if given a period, calculate the vmax, given a companion mass
@@ -889,4 +1117,56 @@ def vmax_array(m_test,mass_tot,freq_array):
     for i in tqdm(range(len(periods))):
         vmax_array[i] = vmax_find(m_test,mass_tot,periods[i])
     print vmax_array[:30]
-        
+
+##function to look through weighted chains, find 95% Confidence levels
+##this comes from Aurelien's analysis of looking at eccentric spectroscopic binaries
+def weighted_conf_lev(chains_file):
+    data = np.genfromtxt(chains_file)
+    weights = data[:,0]
+    amp = data[:,1] ##specifically 2 pi a / P
+    ecc = data[:,2] ##eccentricity
+    w = data[:,3] ##small omega, argument of periapse
+    WJ2000[:,4] ##mean longitude at J2000
+    ##to get the confidence levels, need mean and standard dev
+    ##however, these are weighted, so need to use weighted average and weighted standard dev
+    
+    amp_weight_avg = np.average(amp,weights=weights)
+    ecc_weight_avg = np.average(ecc,weights=weights)
+    w_weight_avg = np.average(w,weights=weights)
+    WJ2000_weight_avg = np.average(WJ2000,weights=weights)
+    
+    ##next, standard deviation is needed
+    ##take the weighted sample variance, then take the square root to get standard dev
+    ##couldn't find a python function, so writing my own
+    ##https://en.wikipedia.org/wiki/Weighted_arithmetic_mean#Weighted_sample_variance
+    def weight_stand_dev(elem_array,weight_avg,weights):
+        x = (elem_array - weight_avg)**2 ##subtract each element from weighted average
+        y = weights*x ##will then need to sum over this
+        z = np.sum(y)
+        ##Double check if weights are normalized to 1 - should be, but in case not
+        v = np.sum(weights)
+        ##the following is then the variance
+        var = z/v
+        ##standard deviation will be square root of variance
+        stand_dev = np.sqrt(var)
+        return stand_dev
+    
+    amp_stand_dev = weight_stand_dev(amp,amp_weight_avg,weights)
+    ecc_stand_dev = weight_stand_dev(ecc,ecc_weight_avg,weights)
+    w_stand_dev = weight_stand_dev(w,w_weight_avg,weights)
+    WJ2000_stand_dev = weight_stand_dev(WJ2000,WJ2000_weight_avg,weights)
+    
+    ##Now with weighted average and standard deviation, can do the 95% confidence interval
+    ##Use similar method as before in other programs
+    CL_amp = stats.norm.interval(0.95, loc=amp_weight_avg, scale=amp_stand_dev)
+    CL_ecc = stats.norm.interval(0.95, loc=ecc_weight_avg, scale=ecc_stand_dev)
+    CL_w = stats.norm.interval(0.95, loc=w_weight_avg, scale=w_stand_dev)
+    CL_WJ2000 = stats.norm.interval(0.95, loc=WJ2000_weight_avg, scale=WJ2000_stand_dev)
+    
+    ##list of the elements
+    elem = ['amp','e','w','WJ200']
+    
+    # output = Table([elem,CL], names = ['elem','95low','95high'])
+    # ascii.write(data,'mass_values.dat')
+    
+    
